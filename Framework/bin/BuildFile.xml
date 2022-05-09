@@ -1,0 +1,12 @@
+<bin file="analyze.cc" name="analyze">
+  <use   name="FWCore/FWLite"/>
+  <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/ParameterSetReader"/>
+  <use   name="FWCore/PluginManager"/>
+  <use   name="PhysicsTools/FWLite"/>  
+  <use   name="TallinnAnalysis/Extractors"/>
+  <use   name="TallinnAnalysis/HistogramTools"/>
+  <use   name="TallinnNtupleProducer/CommonTools"/>
+  <use   name="TallinnNtupleProducer/Selectors"/>
+  <use   name="root"/>
+</bin>
