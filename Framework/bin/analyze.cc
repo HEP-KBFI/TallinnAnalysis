@@ -196,13 +196,16 @@ int main(int argc, char* argv[])
   {  
     edmplugin::PluginManager::configure(edmplugin::standard::config());
   }
-  edm::VParameterSet cfg_varExtractors = cfg_analyze.getParameterSetVector("varExtractorPlugins");
-  std::vector<std::unique_ptr<VarExtractorBase>> varExtractors;
-  for ( auto cfg_varExtractor : cfg_varExtractors )
+  edm::VParameterSet cfg_histograms = cfg_analyze.getParameterSetVector("histograms");
+  std::vector<std::unique_ptr<HistogramFillerBase>> histograms;
+  for ( auto cfg_histogram : cfg_histograms )
   {
     std::string pluginType = cfg_varExtractor.getParameter<std::string>("pluginType");
-    std::unique_ptr<VarExtractorBase> varExtractor = VarExtractorPluginFactory::get()->create(pluginType, cfg_varExtractor);
-    varExtractors.push_back(std::move(varExtractor));
+    cfg_histogram.getParameter<std::string>("process", process);
+    cfg_histogram.getParameter<std::string>("central_or_shift", central_or_shift);
+    std::unique_ptr<HistogramFillerBase> histogram = HistogramFillerPluginFactory::get()->create(pluginType, cfg_histogram);
+    histogram->bookHistograms(fs);
+    histograms.push_back(std::move(histogram));
   }
   if ( (histogramType == kTH1 && varExtractors.size() != 1) || (histogramType == kTH2 && varExtractors.size() != 2) )
     throw cmsException("analyze", __LINE__) << "Number of extractor plugins does not match histogram type !!";
@@ -249,6 +252,9 @@ int main(int argc, char* argv[])
       inputTree_selected = inputTree;
     }
  
+    TO-DO: run, lumi, event numbers need to be read via BranchVars* to avoid that multiple memory addresses read the same branch
+           TMVA and TensorFlowHistogramFillers need to run event number branch for even/odd splitting !!
+
     UInt_t run, lumi;
     ULong64_t event;
     inputTree_selected->SetBranchAddress("run", &run);

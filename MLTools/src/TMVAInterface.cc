@@ -205,7 +205,7 @@ TMVAInterface::disableBDTTransform()
 
 double
 TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs,
-                          int event_number, const bool multiclass) const
+                          ULong64_t event_number) const
 {
     std::map<std::string, double> mvaInputs_final;
     if(fitFunctionFileName_ != "")
@@ -219,11 +219,11 @@ TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs,
 
     if(event_number % 2)
     {
-      return this->operator()(mvaInputs_final, mva_odd_, multiclass);
+      return this->operator()(mvaInputs_final, mva_odd_);
     }
     else
     {
-      return this->operator()(mvaInputs_final, mva_even_, multiclass);
+      return this->operator()(mvaInputs_final, mva_even_);
     }
 }
 
@@ -245,7 +245,7 @@ TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs) const
 
 double
 TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs,
-                          const TMVA::Reader * mva, const bool multiclass) const
+                          const TMVA::Reader * mva) const
 {
   for(auto & mvaInputVariable: mvaInputVariableMap_)
   {

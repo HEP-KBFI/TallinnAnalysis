@@ -16,7 +16,7 @@ class MVAInputVarTransformer;
 
 class TMVAInterface
 {
-public:
+ public:
   TMVAInterface(const std::string & mvaFileName,
                 const std::vector<std::string> & mvaInputVariables,
                 const std::vector<std::string> & spectators = {});
@@ -51,11 +51,11 @@ public:
 
   double
   operator()(const std::map<std::string, double> & mvaInputs,
-             int event_number, const bool multiclass = false) const;
+             ULong64_t event_number) const;
 
   double 
   operator()(const std::map<std::string, double> & mvaInputs,
-             const TMVA::Reader * mva, const bool multiclass = false) const;
+             const TMVA::Reader * mva) const;
 
   /**
    * @brief Return list of MVA input variables
@@ -63,13 +63,7 @@ public:
   const std::vector<std::string> &
   mvaInputVariables() const;
 
-  /**
-   * @brief Returns output of multi-class MVA (used for debugging/synchronization purposes).
-   */
-  const std::vector<float> & 
-  mvamulticlsOutput() const;
-
-private:
+ private:
   enum Mode{
     k_old, k_odd_even
   };
@@ -88,7 +82,6 @@ private:
   mutable std::map<std::string, Float_t> spectators_;
   std::string fitFunctionFileName_;
   MVAInputVarTransformer * Transform_Ptr_;
-  mutable std::vector<float> mvamulticlsOutput_;
 };
 
 #endif // TallinnAnalysis_MLTools_TMVAInterface_h
