@@ -8,288 +8,163 @@
 #include <TMVA/Tools.h>                                               // TMVA::Tools::Instance()
 #include <TMVA/Reader.h>                                              // TMVA::Reader
 
-#include <assert.h>                                                   // assert()
-
-TMVAInterface::TMVAInterface(const std::string & mvaFileName,
-                             const std::vector<std::string> & mvaInputVariables,
-                             const std::vector<std::string> & spectators)
-  : mode_(Mode::k_old)
-  , mva_(nullptr)
-  , mva_odd_(nullptr)
-  , mva_even_(nullptr)
-  , isBDTTransform_(false)
-  , mvaInputVariables_(mvaInputVariables)
-  , Transform_Ptr_(nullptr)
-{
-
-  if(mode_ != Mode::k_old)
-  {
-    throw cmsException(this, __func__, __LINE__) << "Using wrong Mode for this constructor";
-  }
-
-  mvaFileName_ = get_fullpath(mvaFileName);
-
-  TMVA::Tools::Instance();
-  mva_ = new TMVA::Reader("!V:!Silent");
-
-  for(const std::string & mvaInputVariable: mvaInputVariables)
-  {
-    mvaInputVariableMap_[mvaInputVariable] = -1.;
-    mva_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
-  }
-
-  for(const std::string & spectator: spectators)
-  {
-    mva_->AddSpectator(spectator, &spectators_[spectator]);
-  }
-  mva_->BookMVA("BDTG", mvaFileName_);
-}
-
-
 TMVAInterface::TMVAInterface(const std::string & mvaFileName_odd,
-                             const std::string & mvaFileName_even,
                              const std::vector<std::string> & mvaInputVariables,
-                             const std::vector<std::string> & spectators)
-  : mode_(Mode::k_odd_even)
-  , mva_(nullptr)
+                             const std::vector<std::string> & classes,
+                             const std::string & mvaFileName_even,
+                             const std::string & fitFunctionFileName)
+  : classes_(classes)
+  , is_multiclass_(classes.size() > 0)
+  , mvaFileName_odd_("")
   , mva_odd_(nullptr)
+  , mvaFileName_even_("")
   , mva_even_(nullptr)
-  , isBDTTransform_(false)
   , mvaInputVariables_(mvaInputVariables)
-  , Transform_Ptr_(nullptr)
+  , fitFunctionFileName_("")
+  , mvaInputTransformation_(nullptr)
+  , isDEBUG_(false)
 {
-
-  if(mode_ != Mode::k_odd_even)
-  {
-    throw cmsException(this, __func__, __LINE__) << "Using wrong Mode for this constructor";
-  }
-
   mvaFileName_odd_ = get_fullpath(mvaFileName_odd);
-  mvaFileName_even_ = get_fullpath(mvaFileName_even);
 
   TMVA::Tools::Instance();
   mva_odd_ = new TMVA::Reader("!V:!Silent");
-
-  TMVA::Tools::Instance();
-  mva_even_ = new TMVA::Reader("!V:!Silent");
 
   for(const std::string & mvaInputVariable: mvaInputVariables)
   {
     mvaInputVariableMap_[mvaInputVariable] = -1.;
     mva_odd_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
-    mva_even_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
   }
 
-  for(const std::string & spectator: spectators)
-  {
-    mva_odd_->AddSpectator(spectator, &spectators_[spectator]);
-    mva_even_->AddSpectator(spectator, &spectators_[spectator]);
-  }
   mva_odd_->BookMVA("BDTG", mvaFileName_odd_);
-  mva_even_->BookMVA("BDTG", mvaFileName_even_);
+
+  if(! mvaFileName_even.empty())
+  {
+    mvaFileName_even_ = get_fullpath(mvaFileName_even);
+
+    TMVA::Tools::Instance();
+    mva_even_ = new TMVA::Reader("!V:!Silent");
+
+    for(const std::string & mvaInputVariable: mvaInputVariables)
+    {
+      mva_even_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
+    }
+
+    mva_even_->BookMVA("BDTG", mvaFileName_even_);
+  }
+  
+  if(! fitFunctionFileName.empty())
+  {
+    fitFunctionFileName_ = get_fullpath(fitFunctionFileName);
+
+    // initialize the new map and extracts the TF1s
+    mvaInputTransformation_ = new MVAInputVarTransformer(mvaInputVariables_, fitFunctionFileName_);
+  }
 }
-
-TMVAInterface::TMVAInterface(const std::string & mvaFileName,
-                             const std::vector<std::string> & mvaInputVariables,
-                             const std::string & fitFunctionFileName,
-                             const std::vector<std::string> & spectators)
-  : mode_(Mode::k_old)
-  , mva_(nullptr)
-  , mva_odd_(nullptr)
-  , mva_even_(nullptr)
-  , isBDTTransform_(false)
-  , mvaInputVariables_(mvaInputVariables)
-  , fitFunctionFileName_(get_fullpath(fitFunctionFileName))
-  , Transform_Ptr_(nullptr)
-{
-
-  if(mode_ != Mode::k_old)
-  {
-    throw cmsException(this, __func__, __LINE__) << "Using wrong Mode for this constructor";
-  }
-
-  if (fitFunctionFileName_ != "")
-  {
-    Transform_Ptr_ = new MVAInputVarTransformer(mvaInputVariables, fitFunctionFileName_); // Intializing the new map and extracts the TF1s
-  }
-
-  mvaFileName_ = get_fullpath(mvaFileName);
-
-  TMVA::Tools::Instance();
-  mva_ = new TMVA::Reader("!V:!Silent");
-
-  for(const std::string & mvaInputVariable: mvaInputVariables)
-  {
-    mvaInputVariableMap_[mvaInputVariable] = -1.;
-    mva_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
-  }
-
-  for(const std::string & spectator: spectators)
-  {
-    mva_->AddSpectator(spectator, &spectators_[spectator]);
-  }
-  mva_->BookMVA("BDTG", mvaFileName_);
-}
-
-TMVAInterface::TMVAInterface(const std::string & mvaFileName_odd,
-                             const std::string & mvaFileName_even,
-                             const std::vector<std::string> & mvaInputVariables,
-                             const std::string & fitFunctionFileName,
-                             const std::vector<std::string> & spectators)
-
-  : mode_(Mode::k_odd_even)
-  , mva_(nullptr)
-  , mva_odd_(nullptr)
-  , mva_even_(nullptr)
-  , isBDTTransform_(false)
-  , mvaInputVariables_(mvaInputVariables)
-  , fitFunctionFileName_(get_fullpath(fitFunctionFileName))
-  , Transform_Ptr_(nullptr)
-{
-
-  if(mode_ != Mode::k_odd_even)
-  {
-    throw cmsException(this, __func__, __LINE__) << "Using wrong Mode for this constructor";
-  }
-
-  if (fitFunctionFileName_ != "")
-  {
-    Transform_Ptr_ = new MVAInputVarTransformer(mvaInputVariables, fitFunctionFileName_);
-  }
-
-  mvaFileName_odd_ = get_fullpath(mvaFileName_odd);
-  mvaFileName_even_ = get_fullpath(mvaFileName_even);
-
-  TMVA::Tools::Instance();
-  mva_odd_ = new TMVA::Reader("!V:!Silent");
-
-  TMVA::Tools::Instance();
-  mva_even_ = new TMVA::Reader("!V:!Silent");
-
-  for(const std::string & mvaInputVariable: mvaInputVariables)
-  {
-    mvaInputVariableMap_[mvaInputVariable] = -1.;
-    mva_odd_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
-    mva_even_->AddVariable(mvaInputVariable, &mvaInputVariableMap_[mvaInputVariable]);
-  }
-
-  for(const std::string & spectator: spectators)
-  {
-    mva_odd_->AddSpectator(spectator, &spectators_[spectator]);
-    mva_even_->AddSpectator(spectator, &spectators_[spectator]);
-  }
-  mva_odd_->BookMVA("BDTG", mvaFileName_odd_);
-  mva_even_->BookMVA("BDTG", mvaFileName_even_);
-}
-
 
 TMVAInterface::~TMVAInterface()
 {
-  delete mva_;
   delete mva_odd_;
   delete mva_even_;
-  delete Transform_Ptr_;
+  delete mvaInputTransformation_;
 }
 
 void
-TMVAInterface::enableBDTTransform()
+TMVAInterface::transform_mvaOutput(bool flag)
 {
-  isBDTTransform_ = true;
+  transform_mvaOutput_ = flag;
 }
 
-void
-TMVAInterface::disableBDTTransform()
+bool
+TMVAInterface::is_multiclass() const
 {
-  isBDTTransform_ = false;
-}
-
-double
-TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs,
-                          ULong64_t event_number) const
-{
-    std::map<std::string, double> mvaInputs_final;
-    if(fitFunctionFileName_ != "")
-    {
-      mvaInputs_final = Transform_Ptr_->TransformMVAInputVars(mvaInputs); // Re-weight Input Var.s
-    }
-    else
-    {
-      mvaInputs_final = mvaInputs;
-    }
-
-    if(event_number % 2)
-    {
-      return this->operator()(mvaInputs_final, mva_odd_);
-    }
-    else
-    {
-      return this->operator()(mvaInputs_final, mva_even_);
-    }
+  return is_multiclass_;
 }
 
 double
-TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs) const
+TMVAInterface::get_mvaOutput(const std::map<std::string, double> & mvaInputs, ULong64_t event_number) const
 {
-    std::map<std::string, double> mvaInputs_final;
-    if(fitFunctionFileName_ != "")
-    {
-      mvaInputs_final = Transform_Ptr_->TransformMVAInputVars(mvaInputs);       // Re-weight Input Var.s
-    }
-    else
-    {
-      mvaInputs_final = mvaInputs;
-    }
-    return this->operator()(mvaInputs_final, mva_);
+  if ( is_multiclass_ )
+    throw cmsException(this, __func__, __LINE__)
+      << "The function 'get_mvaOutput' is reserved for the non-multiclass case !!";
+  evaluate(mvaInputs, event_number);
+  return mvaOutput_;
 }
 
-
-double
-TMVAInterface::operator()(const std::map<std::string, double> & mvaInputs,
-                          const TMVA::Reader * mva) const
+std::map<std::string, double>
+TMVAInterface::get_mvaOutput_multiclass(const std::map<std::string, double> & mvaInputs, ULong64_t event_number) const
 {
-  for(auto & mvaInputVariable: mvaInputVariableMap_)
-  {
-    if(mvaInputs.count(mvaInputVariable.first))
-    {
-      mvaInputVariable.second = mvaInputs.at(mvaInputVariable.first);
-    }
-    else
-    {
-      throw cmsException(this, __func__, __LINE__)
-        << "Missing value for MVA input variable = '" << mvaInputVariable.first << '\'';
-    }
-  }
-
-  if ( multiclass ) 
-  {
-    mvamulticlsOutput_ = (const_cast<TMVA::Reader*>(mva))->EvaluateMulticlass("BDTG");
-    return std::distance(mvamulticlsOutput_.begin(),std::max_element(mvamulticlsOutput_.begin(),mvamulticlsOutput_.end()));
-  } 
-  else 
-  {
-    mvamulticlsOutput_.clear();
-  }
-
-  // Casting mva from "const TMVA::Reader*" to "TMVA::Reader*" (since EvaluateMVA() doesn't accept const input)
-  double mvaOutput = (const_cast<TMVA::Reader*>(mva))->EvaluateMVA("BDTG");
-  //std::cout << "TMVA: mvaOutput (bef. transform.) " << mvaOutput << '\n';
-  if(isBDTTransform_)
-  {
-    mvaOutput = 1. / (1. + std::sqrt((1. - mvaOutput) / (1. + mvaOutput)));
-  }
-
-  //std::cout << "TMVA: mvaOutput " << mvaOutput << '\n';
-  return mvaOutput;
+  if ( !is_multiclass_ )
+    throw cmsException(this, __func__, __LINE__)
+      << "The function 'get_mvaOutput_multiclass' is reserved for the multiclass case !!";
+  evaluate(mvaInputs, event_number);
+  return mvaOutput_multiclass_;
 }
 
 const std::vector<std::string> &
-TMVAInterface::mvaInputVariables() const
+TMVAInterface::get_mvaInputVariables() const
 {
   return mvaInputVariables_;
 }
 
-const std::vector<float> & 
-TMVAInterface::mvamulticlsOutput() const
+namespace
 {
-  return mvamulticlsOutput_;
+  void copy_mvaInputs(const std::map<std::string, double> & mvaInputs,
+                      std::map<std::string, Float_t> & mvaInputVariableMap)
+  {
+    for ( std::map<std::string, Float_t>::iterator mvaInputVariable = mvaInputVariableMap.begin(); 
+          mvaInputVariable != mvaInputVariableMap.end(); ++mvaInputVariable ) {
+      if ( mvaInputs.count(mvaInputVariable->first) )
+      {
+        mvaInputVariable->second = mvaInputs.at(mvaInputVariable->first);
+      }
+      else
+      {
+        throw cmsException(__func__, __LINE__)
+          << "Missing value for MVA input variable = '" << mvaInputVariable->first << "' !!";
+      }
+    }
+  }
+}
+
+void
+TMVAInterface::evaluate(const std::map<std::string, double> & mvaInputs, ULong64_t event_number) const
+{
+  if ( fitFunctionFileName_ != "" )
+  {
+    // transform MVA input variables (to remove e.g. dependency on gen_mHH)
+    std::map<std::string, double> mvaInputs_transformed = mvaInputTransformation_->TransformMVAInputVars(mvaInputs);
+    copy_mvaInputs(mvaInputs_transformed, mvaInputVariableMap_);
+  }
+  else
+  {
+    copy_mvaInputs(mvaInputs, mvaInputVariableMap_);
+  }
+
+  const TMVA::Reader * mva = nullptr;
+  if ( mva_odd_ && event_number % 2 ) mva = mva_odd_;
+  else                                mva = mva_even_;
+
+
+  if ( is_multiclass_ )
+  {
+    // Casting mva from "const TMVA::Reader*" to "TMVA::Reader*" (since EvaluateMulticlass() doesn't accept const input)
+    std::vector<float> mvaOutput = (const_cast<TMVA::Reader*>(mva))->EvaluateMulticlass("BDTG");
+    if ( mvaOutput.size() != classes_.size() )
+      throw cmsException(this, __func__, __LINE__)
+        << "Size of MVA output vector does not match number of classes !!";
+    size_t numClasses = classes_.size();
+    for ( size_t idxClass = 0; idxClass < numClasses; ++idxClass )
+    {
+      mvaOutput_multiclass_[classes_.at(idxClass)] = mvaOutput.at(idxClass);
+    }
+  }
+  else
+  {
+    // Casting mva from "const TMVA::Reader*" to "TMVA::Reader*" (since EvaluateMVA() doesn't accept const input)
+    double mvaOutput = (const_cast<TMVA::Reader*>(mva))->EvaluateMVA("BDTG");
+    if ( transform_mvaOutput_ )
+    {
+      mvaOutput_ = 1. / (1. + std::sqrt((1. - mvaOutput) / (1. + mvaOutput)));
+    }
+  }
 }

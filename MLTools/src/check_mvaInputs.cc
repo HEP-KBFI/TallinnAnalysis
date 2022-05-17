@@ -1,6 +1,8 @@
 #include "TallinnAnalysis/MLTools/interface/check_mvaInputs.h"
 
-#include <TMath.h> // IsNaN()
+#include <TMath.h>  // IsNaN()
+
+#include <iostream> // std::cout
 
 void
 check_mvaInputs(std::map<std::string, double> & mvaInputs,

@@ -1,3 +1,4 @@
+<use   name="PhysicsTools/TensorFlow"/>
 <use   name="TallinnNtupleProducer/CommonTools"/>
 <use   name="boost"/>
 <use   name="root"/>

@@ -1,7 +1,10 @@
 #ifndef TallinnAnalysis_MLTools_check_mvaInputs_h
 #define TallinnAnalysis_MLTools_check_mvaInputs_h
 
-#include "tthAnalysis/HiggsToTauTau/interface/EventInfo.h"
+#include <Rtypes.h> // UInt_t, ULong64_t
+
+#include <map>    // std::map
+#include <string> // std::string
 
 void
 check_mvaInputs(std::map<std::string, double> & mvaInputs,
