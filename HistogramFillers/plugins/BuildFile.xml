@@ -1,9 +1,0 @@
-<use   name="FWCore/ParameterSet"/>
-<use   name="TallinnAnalysis/HistogramFillers"/>
-<use   name="TallinnAnalysis/MLTools"/>
-<use   name="TallinnNtupleProducer/CommonTools"/>
-<use   name="root"/>
-<export>
-  <lib   name="1"/>
-</export>
-
