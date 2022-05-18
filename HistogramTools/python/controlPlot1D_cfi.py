@@ -12,13 +12,14 @@ import FWCore.ParameterSet.Config as cms
 
 controlPlot1D = cms.PSet(
     pluginType = cms.string('HistogramFiller1D'),
+    histogramDir = cms.string("controlPlots/m_ll"),
     xAxis = cms.PSet(
         numBins = cms.uint32(20),
         xMin = cms.double(0.),
         xMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('m_ll')
+            branchName = cms.string('m_ll/F')
         )
     ),
     categories = cms.VPSet(

@@ -15,13 +15,14 @@ import FWCore.ParameterSet.Config as cms
 
 controlPlot2D = cms.PSet(
     pluginType = cms.string('HistogramFiller2D'),
+    histogramDir = cms.string("controlPlots/htmiss_vs_met_pt"),
     xAxis = cms.PSet(
         numBins = cms.uint32(20),
         xMin = cms.double(0.),
         xMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('met_pt')
+            branchName = cms.string('met_pt/F')
         )
     ),
     yAxis = cms.PSet(
@@ -30,7 +31,7 @@ controlPlot2D = cms.PSet(
         yMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('htmiss')
+            branchName = cms.string('htmiss/F')
         )
     )
 )

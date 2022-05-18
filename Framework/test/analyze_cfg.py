@@ -26,9 +26,9 @@ process.analyze = cms.PSet(
     histogramPlugins = cms.VPSet(
         histograms_controlPlot1D,
         histograms_controlPlot2D,
-        histograms_datacard_HH_2lss_nonresonant,
-        histograms_datacard_HH_2lss_resonant_spin0,
-        histograms_datacard_HH_2lss_resonant_spin2
+#        histograms_datacard_HH_2lss_nonresonant,
+#        histograms_datacard_HH_2lss_resonant_spin0,
+#        histograms_datacard_HH_2lss_resonant_spin2
     ),
 
     evtWeights = cms.vstring([ "evtWeight" ]),
@@ -40,7 +40,7 @@ process.analyze = cms.PSet(
 
 process.fwliteInput.fileNames = cms.vstring(['/home/veelken/newTallinnAnalysis/CMSSW_12_3_1/src/TallinnNtupleProducer/Framework/test/produceNtuple.root'])
 process.fwliteOutput.fileName = cms.string('analyze.root')
-process.analyze.process                                        = cms.string('signal_ggf_nonresonant_hh'),
+process.analyze.process                                        = cms.string('signal_ggf_nonresonant_hh')
 process.analyze.central_or_shift                               = cms.string('central')
 process.analyze.selection                                      = cms.string('nlep == 2 & ntau == 1')
 process.analyze.evtWeights                                     = cms.vstring([ "evtWeight" ])
