@@ -15,12 +15,11 @@
 #include "FWCore/PluginManager/interface/standard.h"                                            // edmplugin::standard::config()
 #include "PhysicsTools/FWLite/interface/TFileService.h"                                         // fwlite::TFileService
 
+#include "TallinnAnalysis/Extractors/interface/BranchVars.h"                                    // BranchVarUInt_t, BranchVarULong64_t
+#include "TallinnAnalysis/HistogramTools/interface/HistogramFillerBase.h"                       // HistogramFillerBase, HistogramFillerPluginFactory
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"                           // cmsException
 #include "TallinnNtupleProducer/CommonTools/interface/format_vT.h"                              // format_vdouble(), format_vstring()
 #include "TallinnNtupleProducer/Selectors/interface/RunLumiEventSelector.h"                     // RunLumiEventSelector
-
-#include "TallinnAnalysis/Extractors/interface/VarExtractorBase.h"                              // VarExtractorBase, VarExtractorPluginFactory
-#include "TallinnAnalysis/HistogramTools/interface/histogramAuxFunctions.h"                     // fillWithOverFlow()
 
 #include <TBenchmark.h>                                                                         // TBenchmark
 #include <TError.h>                                                                             // gErrorAbortLevel, kError
@@ -28,66 +27,14 @@
 #include <TTree.h>                                                                              // TTree
 
 #include <assert.h>                                                                             // assert()
-#include <cmath>                                                                                // std::sqrt()
 #include <cstdlib>                                                                              // EXIT_SUCCESS, EXIT_FAILURE
-#include <fstream>                                                                              // std::ofstream
-#include <iostream>                                                                             // std::cerr, std::fixed
-#include <iomanip>                                                                              // std::setprecision(), std::setw()
+#include <iostream>                                                                             // std::cout
 #include <map>                                                                                  // std::map
 #include <string>                                                                               // std::string
 #include <vector>                                                                               // std::vector
 
 typedef std::vector<double> vdouble;
 typedef std::vector<std::string> vstring;
-
-namespace
-{
-  std::vector<double>
-  getBinning(const edm::ParameterSet & cfg_binning, const std::string & attr_xMin, const std::string & attr_xMax)
-  {
-    std::vector<double> binning;
-    if ( cfg_analyze.exists("binning" ) )
-    {
-      binning = cfg_analyze.getParameter("binning");
-      int numBins = binning.size() - 1;
-      if ( !(numBins >= 1) ) 
-        throw cmsException("analyze", __LINE__) << "Invalid Configuration parameter 'binning' = " << format_vdouble(binning) << " !!";
-    }
-    else
-    {
-      unsigned int numBins = cfg_analyze.getParameter<unsigned int>("numBins");
-      if ( !(numBins >= 1) ) 
-        throw cmsException("analyze", __LINE__) << "Invalid Configuration parameter 'numBins' = " << numBins << " !!";
-      double xMin = cfg_analyze.getParameter<double>(attr_xMin);
-      double xMax = cfg_analyze.getParameter<double>(attr_xMax);
-      if ( !(xMax > xMin) )
-        throw cmsException("analyze", __LINE__) << "Invalid Configuration parameters '" << attr_xMin << "' = " << xMin << "," 
-                                                << " '" << attr_xMax << "' = " << xMax << " !!";
-      }
-      double binWidth = (xMax - xMin)/numBins;
-      for ( int idxBin = 0; idxBin < numBins; ++idxBin )
-      {
-        binning.push_back(xMin + idxBin*binWidth);
-      }
-      binning.push_back(xMin + numBins*binWidth);
-    }
-    return binning;
-  }
-
-  TArrayD
-  convert_to_TArrayD(const std::vector<double> & binning)
-  {
-    TArrayD retVal;
-    int numBins = binning.size() - 1;
-    assert(numBins >= 1);
-    retVal.Set(numBins + 1);
-    for ( int idxBin = 0; idxBin <= numBins; ++idxBin )
-    {
-      retVal[idxBin] = binning[idxBin];
-    }
-    return retVal;
-  }
-}
 
 int main(int argc, char* argv[])
 {
@@ -150,65 +97,26 @@ int main(int argc, char* argv[])
   fwlite::OutputFiles outputFile(cfg);
   fwlite::TFileService fs = fwlite::TFileService(outputFile.file().data());
 
-  std::string histogramDir = cfg_analyze.getParameter<std::string>("histogramDir");
-  std::string histogramType_string = cfg_analyze.getParameter<std::string>("histogramType");
-  enum { kTH1, kTH2 };
-  int histogramType = -1;
-  if      ( histogramType_string == "TH1" ) histogramType = kTH1;
-  else if ( histogramType_string == "TH2" ) histogramType = kTH2;
-  else throw cmsException("analyze", __LINE__) << "Invalid Configuration parameter 'histogramType' = " << histogramType << " !!";
-  std::string histogramTitle;
-  if ( central_or_shift != "" && central_or_shift != "central" ) histogramTitle = Form("%s_%s", process.data(), central_or_shift.data());
-  else                                                           histogramTitle = process;
-  std::string histogramName;
-  if ( histogramDir != "" ) histogramName = Form("%s/%s", histogramDir.data(), histogramTitle.data());
-  else                      histogramName = histogramTitle;
-  TH1* histogram = nullptr;
-  if ( histogramType == kTH1 )
-  {
-    std::cout << "Filling histogram = '" << histogramName << "' of type TH1D, stored in directory = '" << histogramDir << "'" << std::endl;
-    std::vector<double> binning = getBinning(cfg_analyze.getParameterSet("xAxis"), "xMin", "xMax");
-    TArrayD binning_TArrayD = convert_to_TArrayD(binning);
-    int numBins = binning_TArrayD.GetSize() - 1;
-    histogram = fs.make<TH1D>(histogramName.data(), histogramTitle.data(), numBins, binning_TArrayD.GetArray());
-    std::cout << " binning = " << format_vdouble(binning) << std::endl;
-  } 
-  else if ( histogramType == kTH2 )
-  {
-    std::cout << "Filling histogram = '" << histogramName << "' of type TH2D, stored in directory = '" << histogramDir << "'" << std::endl;
-    std::vector<double> binningX = getBinning(cfg_analyze.getParameterSet("xAxis"), "xMin", "xMax");
-    TArrayD binningX_TArrayD = convert_to_TArrayD(binningX);
-    int numBinsX = binningX_TArrayD.GetSize() - 1;
-    std::vector<double> binningY = getBinning(cfg_analyze.getParameterSet("yAxis"), "yMin", "yMax");
-    TArrayD binningY_TArrayD = convert_to_TArrayD(binningY);
-    int numBinsY = binningY_TArrayD.GetSize() - 1;
-    histogram = fs.make<TH2D>(histogramName.data(), histogramTitle.data(), numBinsX, binningX_TArrayD.GetArray(), numBinsY, binningY_TArrayD.GetArray());
-    std::cout << " binning: x-axis = " << format_vdouble(binningX) << ", y-axis = " << format_vdouble(binningY) << std::endl;
-  }
-  else assert(0);
-
-  std::vector<std::string> inputFileNames = inputFiles.files();
-  size_t numInputFiles = inputFileNames.size();
-  std::cout << "Loaded " << numInputFiles << " file(s).\n";
- 
-  // CV: create plugin that extracts value to be filled into histogram from the event
+  // CV: create plugins that book & fill histograms
   if ( !edmplugin::PluginManager::isAvailable() )
   {  
     edmplugin::PluginManager::configure(edmplugin::standard::config());
   }
-  edm::VParameterSet cfg_histograms = cfg_analyze.getParameterSetVector("histograms");
+  edm::VParameterSet cfg_histograms = cfg_analyze.getParameterSetVector("histogramPlugins");
   std::vector<std::unique_ptr<HistogramFillerBase>> histograms;
   for ( auto cfg_histogram : cfg_histograms )
   {
-    std::string pluginType = cfg_varExtractor.getParameter<std::string>("pluginType");
-    cfg_histogram.getParameter<std::string>("process", process);
-    cfg_histogram.getParameter<std::string>("central_or_shift", central_or_shift);
+    std::string pluginType = cfg_histogram.getParameter<std::string>("pluginType");
+    cfg_histogram.addParameter<std::string>("process", process);
+    cfg_histogram.addParameter<std::string>("central_or_shift", central_or_shift);
     std::unique_ptr<HistogramFillerBase> histogram = HistogramFillerPluginFactory::get()->create(pluginType, cfg_histogram);
     histogram->bookHistograms(fs);
     histograms.push_back(std::move(histogram));
   }
-  if ( (histogramType == kTH1 && varExtractors.size() != 1) || (histogramType == kTH2 && varExtractors.size() != 2) )
-    throw cmsException("analyze", __LINE__) << "Number of extractor plugins does not match histogram type !!";
+
+  std::vector<std::string> inputFileNames = inputFiles.files();
+  size_t numInputFiles = inputFileNames.size();
+  std::cout << "Loaded " << numInputFiles << " file(s).\n";
 
   TDirectory* dir = fs.getBareDirectory();
   dir->cd();
@@ -222,12 +130,12 @@ int main(int argc, char* argv[])
   {
     const std::string & inputFileName = inputFileNames.at(idxInputFile);
     std::cout << "Opening #" << idxInputFile << " file " << inputFileName << '\n';
-    TFile* inputFile = TFile::Open(inputFileName);
+    TFile* inputFile = TFile::Open(inputFileName.data());
     if ( !inputFile )
       throw cmsException("analyze", __LINE__) 
         << "The file '" << inputFileName << "' failed to open";
    
-    TTree* inputTree = dynamic_cast<TTree *>(inputFile->Get(treeName));
+    TTree* inputTree = dynamic_cast<TTree *>(inputFile->Get(treeName.data()));
     if ( !inputTree )
       throw cmsException("analyze", __LINE__) 
         << "The file '" << inputFileName << "' does not have a TTree named "
@@ -251,31 +159,36 @@ int main(int argc, char* argv[])
     {
       inputTree_selected = inputTree;
     }
- 
-    TO-DO: run, lumi, event numbers need to be read via BranchVars* to avoid that multiple memory addresses read the same branch
-           TMVA and TensorFlowHistogramFillers need to run event number branch for even/odd splitting !!
 
-    UInt_t run, lumi;
-    ULong64_t event;
-    inputTree_selected->SetBranchAddress("run", &run);
-    inputTree_selected->SetBranchAddress("lumi", &lumi);
-    inputTree_selected->SetBranchAddress("event", &event);
+    BranchVarUInt_t* branchVar_run = new BranchVarUInt_t("run");
+    branchVar_run->setBranchAddress(inputTree_selected);
+    BranchVarUInt_t* branchVar_lumi = new BranchVarUInt_t("lumi");
+    branchVar_lumi->setBranchAddress(inputTree_selected);
+    BranchVarULong64_t* branchVar_event = new BranchVarULong64_t("event");
+    branchVar_event->setBranchAddress(inputTree_selected);
 
-    for ( auto & varExtractor : varExtractors )
+    for ( auto & histogram : histograms )
     {
-      varExtractor.setBranchAddresses(inputTree_selected);
+      histogram->setBranchAddresses(inputTree_selected);
     }
 
-    std::map<std::string, Float_t> evtWeights;
+    std::vector<BranchVarBase*> branchVars_evtWeight;
     for ( const std::string & branchName_evtWeight : branchNames_evtWeights )
     {
-      evtWeights[branchName] = 1.;
-      inputTree_selected->SetBranchAddress(branchName_evtWeight.data(), &evtWeights[branchName]);
+      BranchVarBase* branchVar = new BranchVarFloat_t(branchName_evtWeight);
+      branchVar->setBranchAddress(inputTree_selected);
+      branchVars_evtWeight.push_back(branchVar);
     }
 
     int numEntries = inputTree_selected->GetEntries();
-    for ( int idxEntry = 0; idxEntry < numEntries && (maxEvents == -1 || idxEntry_allInputFiles < maxEvents); ++idxEntry )
+    for ( int idxEntry = 0; idxEntry < numEntries && (maxEvents == -1 || processedEntries_allInputFiles < maxEvents); ++idxEntry )
     {
+      inputTree_selected->GetEntry(idxEntry);
+
+      UInt_t run = branchVar_run->getValue();
+      UInt_t lumi = branchVar_lumi->getValue();
+      ULong64_t event = branchVar_event->getValue();
+
       ++processedEntries_allInputFiles;
       if ( idxEntry == 0 ) ++processedInputFiles;
       if ( processedEntries_allInputFiles > 0 && (processedEntries_allInputFiles % reportEvery) == 0 )
@@ -283,7 +196,7 @@ int main(int argc, char* argv[])
         std::cout << "processing Entry " << processedEntries_allInputFiles
                   << " or " << idxEntry << " entry in #"
                   << idxInputFile
-                  << " (run = " << run() << ", ls = " << lumi << ", event = " << event
+                  << " (run = " << run << ", ls = " << lumi << ", event = " << event
                   << ") file\n";
       }
 
@@ -294,10 +207,7 @@ int main(int argc, char* argv[])
           continue;
         }
         std::cout << "processing Entry " << processedEntries_allInputFiles << ": run = " << run << ", ls = " << lumi << ", event = " << event << '\n';
-        if ( inputTree_selected->isOpen() )
-        {
-          std::cout << "input File = " << inputFileName << '\n';
-        }
+        std::cout << "input File = " << inputFileName << '\n';
       }
 
       if ( isDEBUG )
@@ -306,29 +216,27 @@ int main(int argc, char* argv[])
       }
 
       double evtWeight = 1.;
-      for ( const std::string & branchName_evtWeight : branchNames_evtWeights )
+      for ( auto & branchVar : branchVars_evtWeight )
       {
-        evtWeight *= evtWeights[branchName];
+        evtWeight *= (*branchVar)();
       }
 
-      if ( histogramType == kTH1 )
+      for ( auto & histogram : histograms )
       {
-        assert(varExtractors.size() == 1);
-        double varValue = varExtractors.at(0)->read();
-        fillWithOverFlow(histogram, varValue, evtWeight);
+        histogram->fillHistograms(evtWeight);
       }
-      else if ( histogramType == kTH2 )
-      {
-        double varValueX = varExtractors.at(0)->read();
-        double varValueY = varExtractors.at(1)->read();
-        fillWithOverFlow2d(histogram, varValueX, varValueY, evtWeight);
-      } else assert(0);
 
       ++selectedEntries;
       selectedEntries_weighted += evtWeight;
-      histogram_selectedEntries->Fill(0.);
     }
 
+    delete branchVar_run;
+    delete branchVar_lumi;
+    delete branchVar_event;
+    for ( auto & branchVar : branchVars_evtWeight )
+    {
+      delete branchVar;
+    }
     if ( inputTree_selected != inputTree )
     {
       delete inputTree_selected;
@@ -348,9 +256,9 @@ int main(int argc, char* argv[])
 //--- memory clean-up
   delete run_lumi_eventSelector;
 
-  for ( auto & varExtractor : varExtractors )
+  for ( auto & histogram : histograms )
   {
-    varExtractor.reset(nullptr);
+    histogram.reset(nullptr);
   }
 
   clock.Show("analyze");

@@ -1,5 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
+from TallinnAnalysis.HistogramTools.controlPlot1D_cfi import controlPlot1D as histograms_controlPlot1D
+from TallinnAnalysis.HistogramTools.controlPlot2D_cfi import controlPlot2D as histograms_controlPlot2D
+from TallinnAnalysis.HistogramTools.datacard_HH_2lss_cfi import datacard_HH_2lss_nonresonant as histograms_datacard_HH_2lss_nonresonant, datacard_HH_2lss_resonant_spin0 as histograms_datacard_HH_2lss_resonant_spin0, datacard_HH_2lss_resonant_spin2 as histograms_datacard_HH_2lss_resonant_spin2
+
 process = cms.PSet()
 
 process.fwliteInput = cms.PSet(
@@ -19,20 +23,13 @@ process.analyze = cms.PSet(
 
     selection = cms.string('nlep == 2 & ntau == 1'),
 
-    histogramDir = cms.string(''),
-    histogramType = cms.string('TH1D'),
-    xAxis = cms.PSet(
-        numBins = cms.uint32(20),
-        xMin = cms.double(0.),
-        xMax = cms.double(200.)
-    )
-   
-    varExtractorPlugins = cms.VPSet(
-        cms.PSet(
-            pluginType = cms.string('BranchVarExtractorFloat'),
-            branchName = cms.string('m_ll')
-        )
-    )
+    histogramPlugins = cms.VPSet(
+        histograms_controlPlot1D,
+        histograms_controlPlot2D,
+        histograms_datacard_HH_2lss_nonresonant,
+        histograms_datacard_HH_2lss_resonant_spin0,
+        histograms_datacard_HH_2lss_resonant_spin2
+    ),
 
     evtWeights = cms.vstring([ "evtWeight" ]),
 

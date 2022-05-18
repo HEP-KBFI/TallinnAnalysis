@@ -3,7 +3,7 @@
   <use   name="FWCore/ParameterSet"/>
   <use   name="FWCore/ParameterSetReader"/>
   <use   name="FWCore/PluginManager"/>
-  <use   name="PhysicsTools/FWLite"/>  
+  <use   name="PhysicsTools/FWLite"/>
   <use   name="TallinnAnalysis/Extractors"/>
   <use   name="TallinnAnalysis/HistogramTools"/>
   <use   name="TallinnNtupleProducer/CommonTools"/>
