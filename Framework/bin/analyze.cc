@@ -233,12 +233,6 @@ int main(int argc, char* argv[])
         histogram->fillHistograms(evtWeight);
       }
 
-//-----------------------------------------------------------------------
-// CV: only for debugging !!
-std::cout << "selected event = " << run << ":" << lumi << ":" << event << std::endl;
-std::cout << "evtWeight = " << evtWeight << std::endl;
-//-----------------------------------------------------------------------
-
       if ( selEventsFile )
       {
         (*selEventsFile) << run << ":" << lumi << ":" << event << '\n';

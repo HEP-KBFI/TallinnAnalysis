@@ -14,11 +14,6 @@
 #include "TTreeFormula.h"                                                              // TTreeFormula
 #include "TH1.h"                                                                       // TH1
 
-//---------------------------------------------------------------------------
-// CV: only for debugging !!
-#include <iostream>
-//---------------------------------------------------------------------------
-
 typedef std::vector<double> vdouble;
 typedef std::vector<std::string> vstring;
 
@@ -133,23 +128,10 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       const std::string & bmName_training = hhCoupling.training();
       mvaInputs_[bmName_training] = 1.;
       double mvaOutput = mvaInterface_->get_mvaOutput(mvaInputs_, event_number);
-//---------------------------------------------------------------------------
-// CV: only for debugging !!
-if ( parameter == "SM" )
-{
-  const std::vector<std::string>& mvaInputVariables = mvaInterface_->get_mvaInputVariables();
-  for ( const std::string & mvaInputVariable : mvaInputVariables )
-  {
-    std::cout << mvaInputVariable << " = " << mvaInputs_[mvaInputVariable] << std::endl;
-  }
-  std::cout << "mvaOutput = " << mvaOutput << std::endl;
-}
-//---------------------------------------------------------------------------
       mvaInputs_[bmName_training] = 0.;
       std::map<std::string, std::shared_ptr<BranchVarBase>>::const_iterator branchVar_hhReweight = hhReweightMap_.find(parameter);
       assert(branchVar_hhReweight != hhReweightMap_.end());
       double hhReweight = branchVar_hhReweight->second->operator()();
-std::cout << "hhReweight = " << hhReweight << std::endl;
       fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);
     }
     else if ( mode_ == Mode::kResonant )

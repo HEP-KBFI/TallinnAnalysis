@@ -7,11 +7,6 @@
 #include <map>      // std::map
 #include <string>   // std::string
 
-//---------------------------------------------------------------------------
-// CV: only for debugging !!
-#include <iostream>
-//---------------------------------------------------------------------------
-
 class BranchVarBase
 {
  public:
@@ -55,11 +50,8 @@ class BranchVar : public BranchVarBase
   void
   setBranchAddress(TTree * tree)
   {
-    std::cout << "<BranchVar::setBranchAddress>:" << std::endl;
-    std::cout << "branchName = " << branchName_ << std::endl;
     if ( instances_[branchName_] == this )
     {
-      std::cout << "setting branch address to " << &value_ << std::endl;
       tree->SetBranchAddress(branchName_.data(), &value_);
     }
   }
