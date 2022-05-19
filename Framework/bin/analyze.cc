@@ -28,6 +28,7 @@
 
 #include <assert.h>                                                                             // assert()
 #include <cstdlib>                                                                              // EXIT_SUCCESS, EXIT_FAILURE
+#include <fstream>                                                                              // std::ofstream
 #include <iostream>                                                                             // std::cout
 #include <map>                                                                                  // std::map
 #include <string>                                                                               // std::string
@@ -61,9 +62,9 @@ int main(int argc, char* argv[])
   if ( !edm::readPSetsFrom(argv[1])->existsAs<edm::ParameterSet>("process") )
     throw cmsException("analyze", __LINE__) << "No ParameterSet 'process' found in config file !!";
 
-  edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameter<edm::ParameterSet>("process");
+  edm::ParameterSet cfg = edm::readPSetsFrom(argv[1])->getParameterSet("process");
 
-  edm::ParameterSet cfg_analyze = cfg.getParameter<edm::ParameterSet>("analyze");
+  edm::ParameterSet cfg_analyze = cfg.getParameterSet("analyze");
 
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
 
@@ -79,15 +80,17 @@ int main(int argc, char* argv[])
 
   bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
 
-  std::string selEventsFileName = cfg_analyze.getParameter<std::string>("selEventsFileName");
-  std::cout << "selEventsFileName = " << selEventsFileName << std::endl;
+  std::string selEventsFileName_input = cfg_analyze.getParameter<std::string>("selEventsFileName_input");
+  std::cout << "selEventsFileName_input = " << selEventsFileName_input << std::endl;
   RunLumiEventSelector* run_lumi_eventSelector = 0;
-  if ( selEventsFileName != "" ) {
+  if ( selEventsFileName_input != "" ) {
     edm::ParameterSet cfg_run_lumi_eventSelector;
-    cfg_run_lumi_eventSelector.addParameter<std::string>("inputFileName", selEventsFileName);
+    cfg_run_lumi_eventSelector.addParameter<std::string>("inputFileName", selEventsFileName_input);
     cfg_run_lumi_eventSelector.addParameter<std::string>("separator", ":");
     run_lumi_eventSelector = new RunLumiEventSelector(cfg_run_lumi_eventSelector);
   }
+
+  std::string selEventsFileName_output = cfg_analyze.getParameter<std::string>("selEventsFileName_output");
 
   fwlite::InputSource inputFiles(cfg);
   int maxEvents = inputFiles.maxEvents();
@@ -120,6 +123,10 @@ int main(int argc, char* argv[])
 
   TDirectory* dir = fs.getBareDirectory();
   dir->cd();
+
+  // create output file containing run:lumi:event numbers of events passing final event selection criteria  
+  std::ostream* selEventsFile = ( selEventsFileName_output != "" ) ? new std::ofstream(selEventsFileName_output.data(), std::ios::out) : 0;
+  std::cout << "selEventsFileName_output = " << selEventsFileName_output << std::endl;
 
   int analyzedEntries = 0;
   int processedEntries_allInputFiles = 0;
@@ -224,6 +231,17 @@ int main(int argc, char* argv[])
       for ( auto & histogram : histograms )
       {
         histogram->fillHistograms(evtWeight);
+      }
+
+//-----------------------------------------------------------------------
+// CV: only for debugging !!
+std::cout << "selected event = " << run << ":" << lumi << ":" << event << std::endl;
+std::cout << "evtWeight = " << evtWeight << std::endl;
+//-----------------------------------------------------------------------
+
+      if ( selEventsFile )
+      {
+        (*selEventsFile) << run << ":" << lumi << ":" << event << '\n';
       }
 
       ++selectedEntries;

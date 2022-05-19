@@ -16,8 +16,7 @@ class MVAInputVarTransformer
    * @return Re-scaled mvaInputs Values of MVA input variables (stored in std::map with key = MVA input variable name)
    */
   std::map<std::string, double>
-  TransformMVAInputVars(const std::map<std::string, double> & mvaInputs) const;
-
+  transform(const std::map<std::string, double> & mvaInputs) const;
 
  private:
   std::vector<std::string> mvaInputVariables_;

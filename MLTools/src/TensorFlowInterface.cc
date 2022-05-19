@@ -256,7 +256,7 @@ TensorFlowInterface::evaluate(const std::map<std::string, double> & mvaInputs, U
   if(fitFunctionFileName_ != "")
   {
     // transform MVA input variables (to remove e.g. dependency on gen_mHH)
-    std::map<std::string, double> mvaInputs_transformed = mvaInputTransformation_->TransformMVAInputVars(mvaInputs);
+    std::map<std::string, double> mvaInputs_transformed = mvaInputTransformation_->transform(mvaInputs);
     copy_mvaInputs(mvaInputs_transformed, mvaInputVariables_, inputTensor, isDEBUG_);
   }
   else

@@ -14,6 +14,10 @@ HistogramFillerBase::~HistogramFillerBase()
 void
 HistogramFillerBase::setBranchAddresses(TTree * tree)
 {
+  for ( std::shared_ptr<VarExtractorBase> & extractor : extractors_ )
+  {
+    extractor->setBranchAddresses(tree);
+  }
   for ( std::shared_ptr<BranchVarBase> & branchVar : branchVars_ )
   {
     branchVar->setBranchAddress(tree);

@@ -29,7 +29,7 @@ datacard_HH_2lss_nonresonant = cms.PSet(
         "lep1_conePt/F",
         "lep2_conePt/F",
         "min_dR_lep1_jet/F",
-        "HT/F",
+        "ht/F",
         "min_dR_lep2_jet/F",
         "min_dR_lep_Wjets/F",
         "htmiss/F",

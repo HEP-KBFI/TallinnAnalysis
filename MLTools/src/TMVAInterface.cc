@@ -1,6 +1,7 @@
 #include "TallinnAnalysis/MLTools/interface/TMVAInterface.h"
 
-#include "TallinnNtupleProducer/CommonTools/interface/cmsException.h" // cmsException()
+#include "TallinnNtupleProducer/CommonTools/interface/cmsException.h" // cmsException(), get_human_line()
+#include "TallinnNtupleProducer/CommonTools/interface/format_vT.h"    // format_vstring()
 #include "TallinnNtupleProducer/CommonTools/interface/get_fullpath.h" // get_fullpath()
 
 #include "TallinnAnalysis/MLTools/interface/MVAInputVarTransformer.h" // MVAInputVarTransformer
@@ -24,6 +25,9 @@ TMVAInterface::TMVAInterface(const std::string & mvaFileName_odd,
   , mvaInputTransformation_(nullptr)
   , isDEBUG_(false)
 {
+  std::cout << get_human_line(this, __func__, __LINE__)
+            << "Using " << mvaInputVariables_.size() << " input variables: " << format_vstring(mvaInputVariables_) << std::endl;
+
   mvaFileName_odd_ = get_fullpath(mvaFileName_odd);
 
   TMVA::Tools::Instance();
@@ -132,7 +136,7 @@ TMVAInterface::evaluate(const std::map<std::string, double> & mvaInputs, ULong64
   if ( fitFunctionFileName_ != "" )
   {
     // transform MVA input variables (to remove e.g. dependency on gen_mHH)
-    std::map<std::string, double> mvaInputs_transformed = mvaInputTransformation_->TransformMVAInputVars(mvaInputs);
+    std::map<std::string, double> mvaInputs_transformed = mvaInputTransformation_->transform(mvaInputs);
     copy_mvaInputs(mvaInputs_transformed, mvaInputVariableMap_);
   }
   else

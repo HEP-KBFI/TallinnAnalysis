@@ -38,6 +38,7 @@ class BDTHistogramFiller_HH_multilepton : public HistogramFillerBase
 
  private:
   std::vector<std::string> mvaInputVariables_;
+  std::vector<std::string> mvaInputVariables_wParameters_; 
   std::map<std::string, std::shared_ptr<BranchVarBase>> branchVarMap_; // key = (branch)name of mvaInputVariable
   std::map<std::string, double> mvaInputs_;                            // key = (branch)name of mvaInputVariable
   TMVAInterface * mvaInterface_;

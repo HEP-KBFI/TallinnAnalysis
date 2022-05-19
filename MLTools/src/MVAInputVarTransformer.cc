@@ -40,7 +40,7 @@ MVAInputVarTransformer::~MVAInputVarTransformer()
 {}
 
 std::map<std::string, double>
-MVAInputVarTransformer::TransformMVAInputVars(const std::map<std::string, double> & mvaInputs) const
+MVAInputVarTransformer::transform(const std::map<std::string, double> & mvaInputs) const
 {
   const double gen_mHH = mvaInputs.at("gen_mHH");
   for(const auto & it: mvaInputs)

@@ -82,12 +82,12 @@ createHistogram1D(TFileDirectory & dir, const edm::ParameterSet & cfg)
   const std::string & histogramName = histogramName_and_Title.first;
   const std::string & histogramTitle = histogramName_and_Title.second;
   std::string histogramDir = cfg.getParameter<std::string>("histogramDir");
-  std::cout << "Filling histogram = '" << histogramName << "' of type TH1D, stored in directory = '" << histogramDir << "'" << std::endl;
+  std::cout << "Filling histogram = '" << histogramTitle << "' of type TH1D, stored in directory = '" << histogramDir << "'" << std::endl;
   std::vector<double> binning = getBinning(cfg.getParameterSet("xAxis"), "xMin", "xMax");
   TArrayD binning_TArrayD = convert_to_TArrayD(binning);
   int numBins = binning_TArrayD.GetSize() - 1;
   TH1* histogram = dir.make<TH1D>(histogramName.data(), histogramTitle.data(), numBins, binning_TArrayD.GetArray());
-  std::cout << " binning = " << format_vdouble(binning) << std::endl;
+  //std::cout << " binning = " << format_vdouble(binning) << std::endl;
   return histogram;
 }
 
@@ -98,7 +98,7 @@ createHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg)
   const std::string & histogramName = histogramName_and_Title.first;
   const std::string & histogramTitle = histogramName_and_Title.second;
   std::string histogramDir = cfg.getParameter<std::string>("histogramDir");
-  std::cout << "Filling histogram = '" << histogramName << "' of type TH2D, stored in directory = '" << histogramDir << "'" << std::endl;
+  std::cout << "Filling histogram = '" << histogramTitle << "' of type TH2D, stored in directory = '" << histogramDir << "'" << std::endl;
   std::vector<double> binningX = getBinning(cfg.getParameterSet("xAxis"), "xMin", "xMax");
   TArrayD binningX_TArrayD = convert_to_TArrayD(binningX);
   int numBinsX = binningX_TArrayD.GetSize() - 1;
@@ -106,6 +106,6 @@ createHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg)
   TArrayD binningY_TArrayD = convert_to_TArrayD(binningY);
   int numBinsY = binningY_TArrayD.GetSize() - 1;
   TH2* histogram = dir.make<TH2D>(histogramName.data(), histogramTitle.data(), numBinsX, binningX_TArrayD.GetArray(), numBinsY, binningY_TArrayD.GetArray());
-  std::cout << " binning: x-axis = " << format_vdouble(binningX) << ", y-axis = " << format_vdouble(binningY) << std::endl;
+  //std::cout << " binning: x-axis = " << format_vdouble(binningX) << ", y-axis = " << format_vdouble(binningY) << std::endl;
   return histogram;
 }

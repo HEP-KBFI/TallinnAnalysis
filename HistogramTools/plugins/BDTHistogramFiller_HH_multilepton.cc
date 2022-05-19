@@ -5,6 +5,7 @@
 #include "TallinnAnalysis/HistogramTools/interface/fillWithOverFlow.h"                 // fillWithOverFlow1D()
 #include "TallinnAnalysis/MLTools/interface/TMVAInterface.h"
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"                  // cmsException()
+#include "TallinnNtupleProducer/CommonTools/interface/contains.h"                      // contains()
 #include "TallinnNtupleProducer/EvtWeightTools/interface/HHCoupling.h"                 // HHCoupling
 #include "TallinnNtupleProducer/EvtWeightTools/interface/HHWeightInterfaceCouplings.h" // HHWeightInterfaceCouplings
 
@@ -12,6 +13,11 @@
 #include "TTree.h"                                                                     // TTree
 #include "TTreeFormula.h"                                                              // TTreeFormula
 #include "TH1.h"                                                                       // TH1
+
+//---------------------------------------------------------------------------
+// CV: only for debugging !!
+#include <iostream>
+//---------------------------------------------------------------------------
 
 typedef std::vector<double> vdouble;
 typedef std::vector<std::string> vstring;
@@ -21,9 +27,9 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
   , mvaInterface_(nullptr)
   , hhCouplings_(nullptr)
 {
-  vstring branchName_and_Types = cfg.getParameter<vstring>("mvaInputVariables");
+  vstring branchNames_and_Types = cfg.getParameter<vstring>("mvaInputVariables");
   BranchVarFactory branchVarFactory;
-  for ( const std::string & branchName_and_Type : mvaInputVariables_ )
+  for ( const std::string & branchName_and_Type : branchNames_and_Types )
   {
     size_t pos_separator = branchName_and_Type.rfind("/");
     if ( pos_separator == 0 || pos_separator == std::string::npos )
@@ -33,17 +39,12 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
     std::string branchType = std::string(branchName_and_Type, pos_separator + 1);
     assert(branchName != "" && branchType != "");
     mvaInputVariables_.push_back(branchName);
-    std::shared_ptr<BranchVarBase> branchVar = branchVarFactory.create(branchName);
+    std::shared_ptr<BranchVarBase> branchVar = branchVarFactory.create(branchName_and_Type);
     branchVarMap_[branchName] = branchVar;
     mvaInputs_[branchName] = 0.;
     branchVars_.push_back(branchVar);
   }
-
-  std::string mvaFileName_odd = cfg.getParameter<std::string>("mvaFileName_odd");
-  std::string mvaFileName_even = cfg.getParameter<std::string>("mvaFileName_even");
-  std::string fitFunctionFileName = cfg.getParameter<std::string>("fitFunctionFileName");
-  mvaInterface_ = new TMVAInterface(mvaFileName_odd, mvaInputVariables_, {}, mvaFileName_even, fitFunctionFileName);
-  mvaInterface_->transform_mvaOutput(cfg.getParameter<bool>("transform_mvaOutput"));
+  mvaInputVariables_wParameters_ = mvaInputVariables_;
 
   std::string mode_string = cfg.getParameter<std::string>("mode");
   if      ( mode_string == "nonresonant" ) mode_ = Mode::kNonresonant;
@@ -61,6 +62,13 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
       std::shared_ptr<BranchVarBase> branchVar(new BranchVarFloat_t(branchName));
       hhReweightMap_[bmName] = branchVar;
       branchVars_.push_back(branchVar);
+      const HHCoupling & hhCoupling = hhCouplings_->getCoupling(bmName);
+      const std::string & bmName_training = hhCoupling.training();
+      if ( !contains(mvaInputVariables_wParameters_, bmName_training) )
+      {
+        mvaInputVariables_wParameters_.push_back(bmName_training);
+        mvaInputs_[bmName_training] = 0.;
+      }
     }
   }
   else if ( mode_ == Mode::kResonant )
@@ -72,7 +80,15 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
       massPoints_[parameter] = massPoint;
       parameters_.push_back(parameter);
     }
+    mvaInputVariables_wParameters_.push_back("gen_mHH");
+    mvaInputs_["gen_mHH"] = 0.;
   } else assert(0);
+
+  std::string mvaFileName_odd = cfg.getParameter<std::string>("mvaFileName_odd");
+  std::string mvaFileName_even = cfg.getParameter<std::string>("mvaFileName_even");
+  std::string fitFunctionFileName = cfg.getParameter<std::string>("fitFunctionFileName");
+  mvaInterface_ = new TMVAInterface(mvaFileName_odd, mvaInputVariables_wParameters_, {}, mvaFileName_even, fitFunctionFileName);
+  mvaInterface_->transform_mvaOutput(cfg.getParameter<bool>("transform_mvaOutput"));
 
   branchVar_event_ = std::shared_ptr<BranchVarBase>(new BranchVarULong64_t("event"));
   branchVars_.push_back(branchVar_event_);
@@ -117,10 +133,23 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       const std::string & bmName_training = hhCoupling.training();
       mvaInputs_[bmName_training] = 1.;
       double mvaOutput = mvaInterface_->get_mvaOutput(mvaInputs_, event_number);
+//---------------------------------------------------------------------------
+// CV: only for debugging !!
+if ( parameter == "SM" )
+{
+  const std::vector<std::string>& mvaInputVariables = mvaInterface_->get_mvaInputVariables();
+  for ( const std::string & mvaInputVariable : mvaInputVariables )
+  {
+    std::cout << mvaInputVariable << " = " << mvaInputs_[mvaInputVariable] << std::endl;
+  }
+  std::cout << "mvaOutput = " << mvaOutput << std::endl;
+}
+//---------------------------------------------------------------------------
       mvaInputs_[bmName_training] = 0.;
       std::map<std::string, std::shared_ptr<BranchVarBase>>::const_iterator branchVar_hhReweight = hhReweightMap_.find(parameter);
       assert(branchVar_hhReweight != hhReweightMap_.end());
       double hhReweight = branchVar_hhReweight->second->operator()();
+std::cout << "hhReweight = " << hhReweight << std::endl;
       fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);
     }
     else if ( mode_ == Mode::kResonant )
