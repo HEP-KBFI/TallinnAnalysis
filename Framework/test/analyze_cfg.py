@@ -26,7 +26,7 @@ process.analyze = cms.PSet(
     histogramPlugins = cms.VPSet(
         histograms_controlPlot1D,
         histograms_controlPlot2D,
-#        histograms_datacard_HH_2lss_nonresonant,
+        histograms_datacard_HH_2lss_nonresonant,
 #        histograms_datacard_HH_2lss_resonant_spin0,
 #        histograms_datacard_HH_2lss_resonant_spin2
     ),
@@ -43,11 +43,8 @@ process.fwliteInput.fileNames = cms.vstring(['/home/veelken/newTallinnAnalysis/C
 process.fwliteOutput.fileName = cms.string('analyze.root')
 process.analyze.process                                        = cms.string('signal_ggf_nonresonant_hh')
 process.analyze.central_or_shift                               = cms.string('central')
-##process.analyze.selection                                      = cms.string('nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25. && lep1_isTight && lep1_tightCharge >= 2 && lep2_pt > 15. && lep2_isTight && lep2_tightCharge >= 2 && lep1_charge*lep2_charge > 0 && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters')
+process.analyze.selection                                      = cms.string('nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25. && lep1_isTight && lep1_tightCharge >= 2 && lep2_pt > 15. && lep2_isTight && lep2_tightCharge >= 2 && lep1_charge*lep2_charge > 0 && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters')
 process.analyze.evtWeights                                     = cms.vstring([ "evtWeight" ])
 #process.analyze.selEventsFileName_input                  = cms.string('selEvents_HH_2lss_oldSoftware.txt')
 process.analyze.selEventsFileName_output                       = cms.string('selEvents_HH_2lss_newSoftware.txt')
 process.analyze.isDEBUG                                        = cms.bool(False)
-
-##process.analyze.selection                                      = cms.string('nlep == 2 && ntau == 1 && lep1_pt > 25. && lep1_isTight && lep1_tightCharge >= 2 && lep2_pt > 15. && lep2_isTight && lep2_tightCharge >= 2 && lep1_charge*lep2_charge > 0 && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && passesLowMassLeptonPairVeto && passesZbosonVeto && passesMEtFilters && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.)')
-process.analyze.selection                                      = cms.string('nlep == 2 && ntau == 1 && passesTrigger')
