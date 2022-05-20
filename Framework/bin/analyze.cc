@@ -273,6 +273,8 @@ int main(int argc, char* argv[])
     histogram.reset(nullptr);
   }
 
+  delete selEventsFile;
+
   clock.Show("analyze");
 
   return EXIT_SUCCESS;
