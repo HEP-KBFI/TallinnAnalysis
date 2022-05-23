@@ -24,16 +24,16 @@ datacard_HH_2lss_nonresonant = cms.PSet(
     #     set transform_mvaOutput to False if using XML files trained with TMVA
     transform_mvaOutput = cms.bool(True),
     mvaInputVariables = cms.vstring(
-        "m_ll/F",
-        "dR_ll/F",
-        "lep1_conePt/F",
-        "lep2_conePt/F",
-        "min_dR_lep1_jet/F",
-        "ht/F",
-        "min_dR_lep2_jet/F",
-        "min_dR_lep_Wjets/F",
-        "htmiss/F",
-        "m_jj_W1/F"
+        "m_ll",
+        "dR_ll",
+        "lep1_conePt",
+        "lep2_conePt",
+        "min_dR_lep1_jet",
+        "ht",
+        "min_dR_lep2_jet",
+        "min_dR_lep_Wjets",
+        "htmiss",
+        "m_jj_W1"
     ),
     hhCoupling = config_hhCoupling,
     fitFunctionFileName = cms.string(''),
@@ -52,16 +52,16 @@ datacard_HH_2lss_resonant_spin0 = datacard_HH_2lss_nonresonant.clone(
     mvaFileName_odd = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_even_half_model_spin0.xml'),
     mvaFileName_even = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_odd_half_model_spin0.xml'),
     mvaInputVariables = cms.vstring(
-        "m_ll/F",
-        "mHH_vis/F",
-        "met_LD/F",
-        "dR_ll/F",
-        "min_dR_lep_Wjets/F",
-        "min_dR_lep_leadWjet/F",
-        "max_dR_lep_Wjets/F",
-        "max_dR_lep_leadWjet/F",
-        "dR_jj_W1/F",
-        "mT_lep1/F"
+        "m_ll",
+        "mHH_vis",
+        "met_LD",
+        "dR_ll",
+        "min_dR_lep_Wjets",
+        "min_dR_lep_leadWjet",
+        "max_dR_lep_Wjets",
+        "max_dR_lep_leadWjet",
+        "dR_jj_W1",
+        "mT_lep1"
     ),
     fitFunctionFileName = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_TProfile_signal_fit_func_spin0.root'),
     fitFunctionVariable = cms.string('gen_mHH')
@@ -72,16 +72,16 @@ datacard_HH_2lss_resonant_spin2 = datacard_HH_2lss_resonant_spin0.clone(
     mvaFileName_odd = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_even_half_model_spin2.xml'),
     mvaFileName_even = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_odd_half_model_spin2.xml'),
     mvaInputVariables = cms.vstring(
-        "m_ll/F",
-        "mHH_vis/F",
-        "met_LD/F",
-        "dR_ll/F",
-        "min_dR_lep_Wjets/F",
-        "min_dR_lep_leadWjet/F",
-        "max_dR_lep_Wjets/F",
-        "max_dR_lep_leadWjet/F",
-        "dR_jj_W1/F",
-        "mT_lep1/F"
+        "m_ll",
+        "mHH_vis",
+        "met_LD",
+        "dR_ll",
+        "min_dR_lep_Wjets",
+        "min_dR_lep_leadWjet",
+        "max_dR_lep_Wjets",
+        "max_dR_lep_leadWjet",
+        "dR_jj_W1",
+        "mT_lep1"
     ),
     fitFunctionFileName = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_TProfile_signal_fit_func_spin2.root')
 )

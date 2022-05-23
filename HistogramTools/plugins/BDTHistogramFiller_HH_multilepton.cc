@@ -22,19 +22,11 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
   , mvaInterface_(nullptr)
   , hhCouplings_(nullptr)
 {
-  vstring branchNames_and_Types = cfg.getParameter<vstring>("mvaInputVariables");
-  BranchVarFactory branchVarFactory;
-  for ( const std::string & branchName_and_Type : branchNames_and_Types )
+  vstring branchNames = cfg.getParameter<vstring>("mvaInputVariables");
+  for ( const std::string & branchName : branchNames )
   {
-    size_t pos_separator = branchName_and_Type.rfind("/");
-    if ( pos_separator == 0 || pos_separator == std::string::npos )
-      throw cmsException(this, __func__, __LINE__) 
-        << "Invalid branch name = '" << branchName_and_Type << "' !!";
-    std::string branchName = std::string(branchName_and_Type, 0, pos_separator);
-    std::string branchType = std::string(branchName_and_Type, pos_separator + 1);
-    assert(branchName != "" && branchType != "");
     mvaInputVariables_.push_back(branchName);
-    std::shared_ptr<BranchVarBase> branchVar = branchVarFactory.create(branchName_and_Type);
+    std::shared_ptr<BranchVarBase> branchVar = branchVarFactory::create(branchName_and_Type);
     branchVarMap_[branchName] = branchVar;
     mvaInputs_[branchName] = 0.;
     branchVars_.push_back(branchVar);

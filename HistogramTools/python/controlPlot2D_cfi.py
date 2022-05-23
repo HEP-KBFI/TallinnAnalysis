@@ -22,7 +22,7 @@ controlPlot2D = cms.PSet(
         xMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('met_pt/F')
+            branchName = cms.string('met_pt')
         )
     ),
     yAxis = cms.PSet(
@@ -31,7 +31,7 @@ controlPlot2D = cms.PSet(
         yMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('htmiss/F')
+            branchName = cms.string('htmiss')
         )
     )
 )

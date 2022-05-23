@@ -16,8 +16,7 @@ MVAVarExtractorBase::MVAVarExtractorBase(const edm::ParameterSet & cfg)
   , branchVar_event_(nullptr)
 {
   branchNames_mvaInputVariables_ = cfg.getParameter<vstring>("mvaInputVariables");
-  BranchVarFactory branchVarFactory;
-  branchVars_mvaInputVariables_ = branchVarFactory.create(branchNames_mvaInputVariables_);
+  branchVars_mvaInputVariables_ = branchVarFactory::create(branchNames_mvaInputVariables_);
   branchVars_.insert(branchVars_.end(), branchVars_mvaInputVariables_.begin(), branchVars_mvaInputVariables_.end());
 
   branchVar_event_ = std::shared_ptr<BranchVarBase>(new BranchVarULong64_t(branchName_event_));

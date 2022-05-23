@@ -19,7 +19,7 @@ controlPlot1D = cms.PSet(
         xMax = cms.double(200.),
         observable = cms.PSet(
             pluginType = cms.string('BranchVarExtractor'),
-            branchName = cms.string('m_ll/F')
+            branchName = cms.string('m_ll')
         )
     ),
     categories = cms.VPSet(
