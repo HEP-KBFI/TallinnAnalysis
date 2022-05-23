@@ -15,6 +15,7 @@
 #include "FWCore/PluginManager/interface/standard.h"                                            // edmplugin::standard::config()
 #include "PhysicsTools/FWLite/interface/TFileService.h"                                         // fwlite::TFileService
 
+#include "TallinnAnalysis/Extractors/interface/BranchVarFactory.h"                              // BranchVarFactory
 #include "TallinnAnalysis/Extractors/interface/BranchVars.h"                                    // BranchVarUInt_t, BranchVarULong64_t
 #include "TallinnAnalysis/HistogramTools/interface/HistogramFillerBase.h"                       // HistogramFillerBase, HistogramFillerPluginFactory
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"                           // cmsException
@@ -73,10 +74,10 @@ int main(int argc, char* argv[])
   std::cout << "Processing process = '" << process << "', central_or_shift = '" << central_or_shift << "'" << std::endl;
 
   std::string selection = cfg_analyze.getParameter<std::string>("selection");
-  std::cout << "Applying selection = '" << selection << "'" << std::endl;
+  std::cout << "Selection defined in config file = '" << selection << "'" << std::endl;
   
   vstring branchNames_evtWeights = cfg_analyze.getParameter<vstring>("evtWeights");
-  std::cout << "Applying event weights = '" << format_vstring(branchNames_evtWeights) << "'" << std::endl;
+  std::cout << "Event weights defined in config file = '" << format_vstring(branchNames_evtWeights) << "'" << std::endl;
 
   bool isDEBUG = cfg_analyze.getParameter<bool>("isDEBUG");
 
@@ -157,6 +158,12 @@ int main(int argc, char* argv[])
         << histogramName_analyzedEntries;
     analyzedEntries += histogram_analyzedEntries->GetEntries();
     
+    BranchVarFactory::initialize(inputTree);
+    BranchVarFactory::set_central_or_shift(central_or_shift);
+
+    std::string selection_modified = BranchVarFactory::get_selection(selection);
+    std::cout << "Applying selection = '" << selection_modified << "'" << std::endl;
+
     TTree* inputTree_selected = nullptr;
     if ( selection != "" )
     {
@@ -179,13 +186,19 @@ int main(int argc, char* argv[])
       histogram->setBranchAddresses(inputTree_selected);
     }
 
-    std::vector<BranchVarBase*> branchVars_evtWeight;
-    for ( const std::string & branchName_evtWeight : branchNames_evtWeights )
+    std::vector<std::shared_ptr<BranchVarBase>> branchVars_evtWeight;
+    for ( const std::string& branchName_evtWeight : branchNames_evtWeights )
     {
-      BranchVarBase* branchVar = new BranchVarFloat_t(branchName_evtWeight);
+      std::shared_ptr<BranchVarBase> branchVar = BranchVarFactory::create(branchName_evtWeight);
       branchVar->setBranchAddress(inputTree_selected);
       branchVars_evtWeight.push_back(branchVar);
     }
+    std::vector<std::string> branchNames_evtWeights_modified;
+    for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
+    {
+      branchNames_evtWeights_modified.push_back(branchVar->getBranchName());
+    }
+    std::cout << "Applying event weights = '" << format_vstring(branchNames_evtWeights_modified) << "'" << std::endl;
 
     int numEntries = inputTree_selected->GetEntries();
     for ( int idxEntry = 0; idxEntry < numEntries && (maxEvents == -1 || processedEntries_allInputFiles < maxEvents); ++idxEntry )
@@ -223,7 +236,7 @@ int main(int argc, char* argv[])
       }
 
       double evtWeight = 1.;
-      for ( auto & branchVar : branchVars_evtWeight )
+      for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
       {
         evtWeight *= (*branchVar)();
       }
@@ -245,10 +258,6 @@ int main(int argc, char* argv[])
     delete branchVar_run;
     delete branchVar_lumi;
     delete branchVar_event;
-    for ( auto & branchVar : branchVars_evtWeight )
-    {
-      delete branchVar;
-    }
     if ( inputTree_selected != inputTree )
     {
       delete inputTree_selected;
