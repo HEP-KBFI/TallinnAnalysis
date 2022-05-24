@@ -19,6 +19,12 @@ class MVAVarExtractorBase : public VarExtractorBase
   MVAVarExtractorBase(const edm::ParameterSet & cfg);
   virtual ~MVAVarExtractorBase();
 
+  /**
+   * @brief Create branchVars and call branchVar->setBranchAddress for all branchVars
+   */
+  void
+  setBranchAddresses(TTree * tree);
+
   virtual
   bool is_multiclass() = 0;
 
@@ -73,7 +79,7 @@ class MVAVarExtractorBase : public VarExtractorBase
   std::map<std::string, double>
   get_value_multiclassImp(const std::map<std::string, double> & mvaInputs) const = 0;
 
-  std::vector<std::string> branchNames_mvaInputVariables_;
+  std::vector<std::string> mvaInputVariables_;
   std::vector<std::shared_ptr<BranchVarBase>> branchVars_mvaInputVariables_;
 
   std::string branchName_event_;

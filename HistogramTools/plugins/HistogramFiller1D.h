@@ -29,7 +29,6 @@ class HistogramFiller1D : public HistogramFillerBase
   /**
    * @brief Call VarExtractorBase->setBranchAddresses and TTreeFormula constructor
    */
-  virtual
   void
   setBranchAddresses(TTree * tree);
 

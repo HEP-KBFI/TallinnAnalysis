@@ -7,6 +7,7 @@
 #include "TallinnNtupleProducer/CommonTools/interface/contains.h"     // contains()
 
 #include <TBranch.h>   // TBranch
+#include <TLeaf.h>     // TLeaf
 #include <TObjArray.h> // TObjArray
 #include <TString.h>   // Form()
 #include <TTree.h>     // TTree
@@ -34,15 +35,35 @@ BranchVarFactory::initialize(TTree * tree)
     TBranch * branch = dynamic_cast<TBranch *>(branches->At(idxBranch));
     assert(branch);
     std::string branchName_and_Type = branch->GetTitle();
+    std::string branchName, branchType;
+    bool branchName_and_Type_isInitialized = false;
     size_t pos_separator = branchName_and_Type.rfind("/");
-    if ( pos_separator == 0 || pos_separator == std::string::npos )
+    if ( pos_separator != 0 && pos_separator != std::string::npos )
+    {
+      branchName = std::string(branchName_and_Type, 0, pos_separator);
+      branchType = std::string(branchName_and_Type, pos_separator + 1);
+      branchName_and_Type_isInitialized = true;
+    }
+    else
+    {
+      TObjArray * leaves = branch->GetListOfLeaves();
+      int numLeaves = leaves->GetEntries();
+      if ( numLeaves == 1 )
+      {
+        TLeaf * leaf = dynamic_cast<TLeaf * >(leaves->At(0));
+        assert(leaf);
+        branchName = branch->GetName();
+        branchType = leaf->GetTypeName();
+        branchName_and_Type_isInitialized = true;
+      }
+    }
+    if ( !branchName_and_Type_isInitialized )
       throw cmsException(__func__, __LINE__) 
-        << "Invalid branch name = '" << branchName_and_Type << "' !!";
-    std::string branchName = std::string(branchName_and_Type, 0, pos_separator);
-    std::string branchType = std::string(branchName_and_Type, pos_separator + 1);
+        << "Failed to infer branch type for branch '" << branch->GetName() << "' !!";
     if ( branchMap_.find(branchName) != branchMap_.end() )
       throw cmsException(__func__, __LINE__) 
         << "Branch '" << branchName << "' found in TTree more than once !!";
+    branchMap_[branchName] = branchType;
   }
 }
 
@@ -55,7 +76,7 @@ BranchVarFactory::set_central_or_shift(const std::string & central_or_shift)
 std::string
 BranchVarFactory::get_selection(const std::string & selection)
 {
-  if ( branchMap_.size() )
+  if ( branchMap_.size() == 0 )
     throw cmsException(__func__, __LINE__) 
       << "Branch map not initialized !!";
   if ( central_or_shift_ == "" )
@@ -92,7 +113,7 @@ BranchVarFactory::get_selection(const std::string & selection)
 std::shared_ptr<BranchVarBase>
 BranchVarFactory::create(const std::string & branchName)
 {
-  if ( branchMap_.size() )
+  if ( branchMap_.size() == 0 )
     throw cmsException(__func__, __LINE__) 
       << "Branch map not initialized !!";
   if ( central_or_shift_ == "" )

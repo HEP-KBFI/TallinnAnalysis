@@ -21,18 +21,18 @@ class HistogramFillerBase
   virtual ~HistogramFillerBase();
 
   /**
-   * @brief Call branchVar->setSetBranchAddress for all branchVars
-   */
-  virtual
-  void
-  setBranchAddresses(TTree * tree);
-
-  /**
    * @brief Book histogram(s)
    */
   virtual
   void
   bookHistograms(TFileDirectory & dir) = 0;
+
+  /**
+   * @brief Call branchVar->setSetBranchAddress for all branchVars
+   */
+  virtual
+  void
+  setBranchAddresses(TTree * tree);
 
   /**
    * @brief Fill histogram(s)

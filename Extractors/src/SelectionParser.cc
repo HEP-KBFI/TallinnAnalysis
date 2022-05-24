@@ -14,36 +14,38 @@ struct MyGrammar : qi::grammar<std::string::const_iterator, std::vector<std::str
 {
   MyGrammar() : MyGrammar::base_type(disjunction_)
   {
-    disjunction_ = conjunction_ >> *(further_conjunction_);
-    conjunction_ = conjunct_ >> *(further_conjunct_);
-    further_conjunction_ = logical_or_ >> conjunction_;
+    disjunction_ = conjunction_ >> *(logical_or_ >> conjunction_);
     logical_or_ = qi::string("||") | qi::string("|");
-    conjunct_ = condition_ | group_;
-    further_conjunct_ = logical_and_ >> conjunct_;
+    conjunction_ = conjunct_ >> *(logical_and_ >> conjunct_);
     logical_and_ = qi::string("&&") | qi::string("&");
-    condition_ = variable_ >> cmp_operator_ >> value_;
+    conjunct_ = condition1_ | *(not_) >> (condition2_ | group_);
+    condition1_ = variable_ >> *(mult_operator_ >> variable_) >> *(cmp_operator_ >> value_);
     variable_ = +(qi::char_("a-zA-Z0-9_"));
+    mult_operator_ = qi::string("*");
     cmp_operator_ = qi::string(">=") | qi::string("==") | qi::string("<=") | qi::string(">") | qi::string("=") | qi::string("<");
     value_ = +(qi::char_("0-9.e+-"));
+    not_ = qi::string("!");
+    condition2_ = variable_;
+    group_ = left_bracket_ >> disjunction_ >> right_bracket_;
     left_bracket_ = qi::string("(");
     right_bracket_ = qi::string(")");
-    group_ = left_bracket_ >> disjunction_ >> right_bracket_;
   }
 
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> disjunction_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> conjunction_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> further_conjunction_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> logical_or_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> conjunct_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> further_conjunct_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> conjunction_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> logical_and_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> conjunct_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition1_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> variable_;
+  qi::rule<std::string::const_iterator, std::string(), qi::space_type> mult_operator_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> cmp_operator_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> value_;
+  qi::rule<std::string::const_iterator, std::string(), qi::space_type> not_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition2_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> group_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> left_bracket_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> right_bracket_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> group_;
 };
 
 SelectionParser::SelectionParser()

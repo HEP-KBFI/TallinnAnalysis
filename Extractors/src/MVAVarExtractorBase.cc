@@ -15,10 +15,8 @@ MVAVarExtractorBase::MVAVarExtractorBase(const edm::ParameterSet & cfg)
   , branchName_event_("event")
   , branchVar_event_(nullptr)
 {
-  branchNames_mvaInputVariables_ = cfg.getParameter<vstring>("mvaInputVariables");
-  branchVars_mvaInputVariables_ = branchVarFactory::create(branchNames_mvaInputVariables_);
-  branchVars_.insert(branchVars_.end(), branchVars_mvaInputVariables_.begin(), branchVars_mvaInputVariables_.end());
-
+  mvaInputVariables_ = cfg.getParameter<vstring>("mvaInputVariables");
+  
   branchVar_event_ = std::shared_ptr<BranchVarBase>(new BranchVarULong64_t(branchName_event_));
   branchVars_.push_back(branchVar_event_);
 
@@ -33,6 +31,16 @@ MVAVarExtractorBase::MVAVarExtractorBase(const edm::ParameterSet & cfg)
 
 MVAVarExtractorBase::~MVAVarExtractorBase()
 {}
+
+void
+MVAVarExtractorBase::setBranchAddresses(TTree * tree)
+{
+  branchVars_mvaInputVariables_ = BranchVarFactory::create(mvaInputVariables_);
+  branchVars_.clear();
+  branchVars_.insert(branchVars_.end(), branchVars_mvaInputVariables_.begin(), branchVars_mvaInputVariables_.end());
+  branchVars_.push_back(branchVar_event_);
+  VarExtractorBase::setBranchAddresses(tree);
+}
 
 double
 MVAVarExtractorBase::get_value() const

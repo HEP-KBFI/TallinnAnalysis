@@ -16,6 +16,12 @@ class BranchVarExtractor : public VarExtractorBase
   ~BranchVarExtractor();
 
   /**
+   * @brief Create branchVars and call branchVar->setBranchAddress for all branchVars
+   */
+  void
+  setBranchAddresses(TTree * tree);
+
+  /**
    * @brief Return value to be filled into histogram
    */
   double

@@ -16,7 +16,7 @@ TMVAVarExtractor::TMVAVarExtractor(const edm::ParameterSet & cfg)
   {
     classes_ = cfg.getParameter<vstring>("classes");
   }
-  mvaInterface_ = new TMVAInterface(mvaFileName_odd_, branchNames_mvaInputVariables_, classes_, mvaFileName_even_, fitFunctionFileName_);
+  mvaInterface_ = new TMVAInterface(mvaFileName_odd_, mvaInputVariables_, classes_, mvaFileName_even_, fitFunctionFileName_);
   mvaInterface_->transform_mvaOutput(cfg.getParameter<bool>("transform_mvaOutput"));
 }
 

@@ -10,12 +10,19 @@ BranchVarExtractor::BranchVarExtractor(const edm::ParameterSet & cfg)
   , branchVar_(nullptr)
 {
   branchName_ = cfg.getParameter<std::string>("branchName");
-  branchVar_ = branchVarFactory::create(branchName_);
-  branchVars_.push_back(branchVar_);
 }
 
 BranchVarExtractor::~BranchVarExtractor()
 {}
+
+void
+BranchVarExtractor::setBranchAddresses(TTree * tree)
+{
+  branchVar_ = BranchVarFactory::create(branchName_);
+  branchVars_.clear();
+  branchVars_.push_back(branchVar_);
+  VarExtractorBase::setBranchAddresses(tree);
+}
 
 double
 BranchVarExtractor::get_value() const

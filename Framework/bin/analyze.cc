@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
     std::unique_ptr<HistogramFillerBase> histogram = HistogramFillerPluginFactory::get()->create(pluginType, cfg_histogram);
     histogram->bookHistograms(fs);
     histograms.push_back(std::move(histogram));
-  }
+  }  
 
   std::vector<std::string> inputFileNames = inputFiles.files();
   size_t numInputFiles = inputFileNames.size();
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
     TTree* inputTree_selected = nullptr;
     if ( selection != "" )
     {
-      inputTree_selected = inputTree->CopyTree(selection.data());
+      inputTree_selected = inputTree->CopyTree(selection_modified.data());
     }
     else
     {

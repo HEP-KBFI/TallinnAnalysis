@@ -22,15 +22,7 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
   , mvaInterface_(nullptr)
   , hhCouplings_(nullptr)
 {
-  vstring branchNames = cfg.getParameter<vstring>("mvaInputVariables");
-  for ( const std::string & branchName : branchNames )
-  {
-    mvaInputVariables_.push_back(branchName);
-    std::shared_ptr<BranchVarBase> branchVar = branchVarFactory::create(branchName_and_Type);
-    branchVarMap_[branchName] = branchVar;
-    mvaInputs_[branchName] = 0.;
-    branchVars_.push_back(branchVar);
-  }
+  mvaInputVariables_ = cfg.getParameter<vstring>("mvaInputVariables");
   mvaInputVariables_wParameters_ = mvaInputVariables_;
 
   std::string mode_string = cfg.getParameter<std::string>("mode");
@@ -97,6 +89,22 @@ BDTHistogramFiller_HH_multilepton::bookHistograms(TFileDirectory & dir)
     cfg_histogram.addParameter<std::string>("histogramDir", Form("%s/%s", histogramDir.data(), parameter.data()));
     histograms_[parameter] = createHistogram1D(dir, cfg_histogram);
   }
+}
+
+void
+BDTHistogramFiller_HH_multilepton::setBranchAddresses(TTree * tree)
+{
+  branchVars_.clear();
+  const vstring & branchNames = mvaInputVariables_;
+  for ( const std::string & branchName : branchNames )
+  {
+    std::shared_ptr<BranchVarBase> branchVar = BranchVarFactory::create(branchName);
+    branchVarMap_[branchName] = branchVar;
+    mvaInputs_[branchName] = 0.;
+    branchVars_.push_back(branchVar);
+  }
+  branchVars_.push_back(branchVar_event_);
+  HistogramFillerBase::setBranchAddresses(tree);
 }
 
 void

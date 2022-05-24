@@ -31,6 +31,12 @@ class BDTHistogramFiller_HH_multilepton : public HistogramFillerBase
   bookHistograms(TFileDirectory & dir);
 
   /**
+   * @brief Create branchVars and call branchVar->setSetBranchAddress for all branchVars
+   */
+  void
+  setBranchAddresses(TTree * tree);
+
+  /**
    * @brief Fill histogram
    */
   void
