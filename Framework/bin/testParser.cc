@@ -14,29 +14,23 @@ struct my_grammar : qi::grammar<std::string::const_iterator, std::vector<std::st
 {
   my_grammar() : my_grammar::base_type(disjunction_)
   {
-    disjunction_ = conjunction_ >> *(further_conjunction_);
-    conjunction_ = conjunct_ >> *(further_conjunct_);
+    disjunction_ = conjunction_ >> *(logical_or_ >> conjunction_);
+    conjunction_ = conjunct_ >> *(logical_and_ >> conjunct_);
     further_conjunction_ = logical_or_ >> conjunction_;
     logical_or_ = qi::string("||") | qi::string("|");
-    //conjunct_ = condition1_ | condition2_ | condition3_ | not_condition3_ | group_ | not_group_;
-    //conjunct_ = condition1_ | condition3_ | not_condition3_ | group_ | not_group_;
-    //conjunct_ = condition1_ | (condition3_  >> qi::eoi) | (not_condition3_ >> qi::eoi) | (not_group_ >> qi::eoi) | (group_ >> qi::eoi);
-    conjunct_ = condition2_ | not_condition3_ | group_;
+    conjunct_ = condition1_ | *(not_) >> (condition2_ | group_);
     further_conjunct_ = logical_and_ >> conjunct_;
     logical_and_ = qi::string("&&") | qi::string("&");
-    not_ = qi::string("!");
-    condition1_ = variable_ >> cmp_operator_ >> value_;
-    condition2_ = variable_ >> *(mult_operator_ >> variable_) >> *(cmp_operator_ >> value_);
+    condition1_ = variable_ >> *(mult_operator_ >> variable_) >> *(cmp_operator_ >> value_);
     mult_operator_ = qi::string("*");
-    condition3_ = variable_;
-    not_condition3_ = not_ >> condition3_;
+    not_ = qi::string("!");
+    condition2_ = variable_;
     variable_ = +(qi::char_("a-zA-Z0-9_"));
     cmp_operator_ = qi::string(">=") | qi::string("==") | qi::string("<=") | qi::string(">") | qi::string("=") | qi::string("<");
     value_ = +(qi::char_("0-9.e+-"));
     left_bracket_ = qi::string("(");
     right_bracket_ = qi::string(")");
-    group_ = *(not_) >> left_bracket_ >> disjunction_ >> right_bracket_;
-    not_group_ = not_ >> group_;
+    group_ = left_bracket_ >> disjunction_ >> right_bracket_;
   }
 
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> disjunction_;
@@ -46,19 +40,16 @@ struct my_grammar : qi::grammar<std::string::const_iterator, std::vector<std::st
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> conjunct_;
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> further_conjunct_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> logical_and_;
-  qi::rule<std::string::const_iterator, std::string(), qi::space_type> not_;
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition1_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition2_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> mult_operator_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition3_; 
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> not_condition3_;
+  qi::rule<std::string::const_iterator, std::string(), qi::space_type> not_;
+  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> condition2_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> variable_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> cmp_operator_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> value_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> left_bracket_;
   qi::rule<std::string::const_iterator, std::string(), qi::space_type> right_bracket_;
   qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> group_;
-  qi::rule<std::string::const_iterator, std::vector<std::string>(), qi::space_type> not_group_;
 };
 
 template <typename Parser, typename Skipper, typename ... Args>
@@ -75,15 +66,6 @@ void PhraseParseOrDie(const std::string& input, const Parser& p, const Skipper& 
 
 int main(int argc, char* argv[])
 {
-  //std::string test_string = "nlep == 2";
-  //std::string test_string = "nlep == 2 && ntau == 1";
-  //std::string test_string = "nlep == 2 || ntau == 1";
-  //std::string test_string = "njetAK4 >= 4 || met_LD > 30";
-  //std::string test_string = "nlep == 2 && ntau == 1 && (njetAK4 >= 4 || met_LD > 30.)";
-  //std::string test_string = "nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25. && lep1_isTight && lep1_tightCharge >= 2 && lep2_pt > 15. && lep2_isTight && lep2_tightCharge >= 2 && lep1_charge*lep2_charge > 0 && tau1_pt > 20. && tau1_isTight && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters && ntightlep == 2 && ntighttau == 1";
-  //std::string test_string = "nlep == 2 && lep1_charge*lep2_charge > 0 && !(lep2_isFake || lep2_isFlip)";
-  //std::string test_string = "nlep == 2 && lep1_charge*lep2_charge > 0 && !(lep2_isFake || lep2_isFlip) && !tau1_isFake && passesZbosonVeto";
-  //std::string test_string = "nlep == 2 && lep1_charge*lep2_charge > 0 && !tau1_isFake && passesZbosonVeto && (lep2_isFake || lep2_isFlip)";
   std::string test_string = "nlep == 2 && ntau == 1 && passesTrigger && lep1_pt > 25. && lep1_isTight && lep1_tightCharge >= 2 && !(lep1_isFake || lep1_isFlip) && lep2_pt > 15. && lep2_isTight && lep2_tightCharge >= 2 && !(lep2_isFake || lep2_isFlip) && lep1_charge*lep2_charge > 0 && tau1_pt > 20. && tau1_isTight && !tau1_isFake && (njetAK4 >= 2 || njetAK8Wjj >= 1) && njetAK4bL <= 1 && njetAK4bM == 0 && (lep1_pdgId == 13 || lep2_pdgId == 13 || met_LD > 30.) && passesLowMassLeptonPairVeto && passesZbosonVeto && passesHtoZZto4lVeto && passesMEtFilters && ntightlep == 2 && ntighttau == 1";
 
   std::vector<std::string> result;
