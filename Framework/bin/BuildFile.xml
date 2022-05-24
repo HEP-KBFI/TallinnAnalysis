@@ -10,3 +10,8 @@
   <use   name="TallinnNtupleProducer/Selectors"/>
   <use   name="root"/>
 </bin>
+<bin file="testParser.cc" name="testParser">
+  <use   name="boost"/>
+  <use   name="boost_regex"/>
+  <use   name="root"/>
+</bin>
