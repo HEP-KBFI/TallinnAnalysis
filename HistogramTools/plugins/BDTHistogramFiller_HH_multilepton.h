@@ -4,6 +4,7 @@
 #include "CommonTools/Utils/interface/TFileDirectory.h"                   // TFileDirectory
 #include "FWCore/ParameterSet/interface/ParameterSet.h"                   // edm::ParameterSet
 
+#include "TallinnAnalysis/CommonTools/interface/DumpToJSONFile.h"         // DumpToJSONFile
 #include "TallinnAnalysis/Extractors/interface/VarExtractorBase.h"        // VarExtractorBase, VarExtractorPluginFactory
 #include "TallinnAnalysis/HistogramTools/interface/HistogramFillerBase.h" // HistogramFillerBase
 
@@ -56,6 +57,8 @@ class BDTHistogramFiller_HH_multilepton : public HistogramFillerBase
 
   std::map<std::string, TH1 *> histograms_; // key = parameter
 
+  std::shared_ptr<BranchVarBase> branchVar_run_;
+  std::shared_ptr<BranchVarBase> branchVar_lumi_;
   std::shared_ptr<BranchVarBase> branchVar_event_;
 
   // data-members specific to non-resonant case
@@ -64,6 +67,10 @@ class BDTHistogramFiller_HH_multilepton : public HistogramFillerBase
 
   // data-members specific to resonant case
   std::map<std::string, double> massPoints_;
+
+  bool isDEBUG_;
+
+  DumpToJSONFile * jsonFile_;
 };
 
 #endif // TallinnAnalysis_HistogramTools_HistogramFiller1D_h

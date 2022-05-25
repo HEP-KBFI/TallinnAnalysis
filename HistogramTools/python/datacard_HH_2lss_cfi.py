@@ -42,7 +42,9 @@ datacard_HH_2lss_nonresonant = cms.PSet(
         numBins = cms.uint32(100),
         xMin = cms.double(0.),
         xMax = cms.double(1.)
-    )
+    ),
+    jsonFileName = cms.string("datacard_HH_2lss_nonresonant.json"),
+    isDEBUG = cms.bool(True)
 )
 
 datacard_HH_2lss_resonant_spin0 = datacard_HH_2lss_nonresonant.clone(
@@ -64,7 +66,8 @@ datacard_HH_2lss_resonant_spin0 = datacard_HH_2lss_nonresonant.clone(
         "mT_lep1"
     ),
     fitFunctionFileName = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_TProfile_signal_fit_func_spin0.root'),
-    fitFunctionVariable = cms.string('gen_mHH')
+    fitFunctionVariable = cms.string('gen_mHH'),
+    isDEBUG = cms.bool(False)
 )
 
 datacard_HH_2lss_resonant_spin2 = datacard_HH_2lss_resonant_spin0.clone(
@@ -83,5 +86,6 @@ datacard_HH_2lss_resonant_spin2 = datacard_HH_2lss_resonant_spin0.clone(
         "dR_jj_W1",
         "mT_lep1"
     ),
-    fitFunctionFileName = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_TProfile_signal_fit_func_spin2.root')
+    fitFunctionFileName = cms.string('TallinnAnalysis/MLTools/data/HH_2lss/2lss_leq1tau_TProfile_signal_fit_func_spin2.root'),
+    isDEBUG = cms.bool(False)
 )

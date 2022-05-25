@@ -1,6 +1,7 @@
 #include "TallinnAnalysis/HistogramTools/plugins/BDTHistogramFiller_HH_multilepton.h"
 
 #include "TallinnAnalysis/Extractors/interface/BranchVarFactory.h"                     // BranchVarFactory
+#include "TallinnAnalysis/Extractors/interface/BranchVars.h"                           // BranchVarUInt_t, BranchVarULong64_t
 #include "TallinnAnalysis/HistogramTools/interface/createHistogram.h"                  // createHistogram1D()
 #include "TallinnAnalysis/HistogramTools/interface/fillWithOverFlow.h"                 // fillWithOverFlow1D()
 #include "TallinnAnalysis/MLTools/interface/TMVAInterface.h"
@@ -21,6 +22,7 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
   : HistogramFillerBase(cfg)
   , mvaInterface_(nullptr)
   , hhCouplings_(nullptr)
+  , jsonFile_(nullptr)
 {
   mvaInputVariables_ = cfg.getParameter<vstring>("mvaInputVariables");
   mvaInputVariables_wParameters_ = mvaInputVariables_;
@@ -71,12 +73,24 @@ BDTHistogramFiller_HH_multilepton::BDTHistogramFiller_HH_multilepton(const edm::
 
   branchVar_event_ = std::shared_ptr<BranchVarBase>(new BranchVarULong64_t("event"));
   branchVars_.push_back(branchVar_event_);
+
+  isDEBUG_ = cfg.getParameter<bool>("isDEBUG");
+  if ( isDEBUG_ )
+  {
+    branchVar_run_ = std::shared_ptr<BranchVarBase>(new BranchVarUInt_t("run"));
+    branchVars_.push_back(branchVar_run_);
+    branchVar_lumi_ = std::shared_ptr<BranchVarBase>(new BranchVarUInt_t("lumi"));
+    branchVars_.push_back(branchVar_lumi_);
+    std::string jsonFileName = cfg.getParameter<std::string>("jsonFileName");
+    jsonFile_ = new DumpToJSONFile(jsonFileName);
+  }
 }
 
 BDTHistogramFiller_HH_multilepton::~BDTHistogramFiller_HH_multilepton()
 {
   delete mvaInterface_;
   delete hhCouplings_;
+  delete jsonFile_;
 }
 
 void
@@ -103,6 +117,11 @@ BDTHistogramFiller_HH_multilepton::setBranchAddresses(TTree * tree)
     mvaInputs_[branchName] = 0.;
     branchVars_.push_back(branchVar);
   }
+  if ( isDEBUG_ )
+  {
+    branchVars_.push_back(branchVar_run_);
+    branchVars_.push_back(branchVar_lumi_);
+  }
   branchVars_.push_back(branchVar_event_);
   HistogramFillerBase::setBranchAddresses(tree);
 }
@@ -128,11 +147,19 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       const std::string & bmName_training = hhCoupling.training();
       mvaInputs_[bmName_training] = 1.;
       double mvaOutput = mvaInterface_->get_mvaOutput(mvaInputs_, event_number);
+      if ( isDEBUG_ && parameter == "SM" )
+      {
+        UInt_t run_number = (dynamic_cast<BranchVarUInt_t *>(branchVar_run_.get()))->getValue();
+        UInt_t lumi_number = (dynamic_cast<BranchVarUInt_t *>(branchVar_lumi_.get()))->getValue();
+        std::map<std::string, double> variables = mvaInputs_;
+        variables["mvaOutput"] = mvaOutput;
+        jsonFile_->write(run_number, lumi_number, event_number, variables);
+      }
       mvaInputs_[bmName_training] = 0.;
       std::map<std::string, std::shared_ptr<BranchVarBase>>::const_iterator branchVar_hhReweight = hhReweightMap_.find(parameter);
       assert(branchVar_hhReweight != hhReweightMap_.end());
       double hhReweight = branchVar_hhReweight->second->operator()();
-      fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);
+      fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);      
     }
     else if ( mode_ == Mode::kResonant )
     {
@@ -140,8 +167,16 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       assert(massPoint != massPoints_.end());
       mvaInputs_["gen_mHH"] = massPoint->second;
       double mvaOutput = mvaInterface_->get_mvaOutput(mvaInputs_, event_number);
+      if ( isDEBUG_ && massPoint->second == 500. )
+      {
+        UInt_t run_number = (dynamic_cast<BranchVarUInt_t *>(branchVar_run_.get()))->getValue();
+        UInt_t lumi_number = (dynamic_cast<BranchVarUInt_t *>(branchVar_lumi_.get()))->getValue();
+        std::map<std::string, double> variables = mvaInputs_;
+        variables["mvaOutput"] = mvaOutput;
+        jsonFile_->write(run_number, lumi_number, event_number, variables);
+      }
       mvaInputs_["gen_mHH"] = 0.;
-      fillWithOverFlow1D(histogram, mvaOutput, evtWeight);
+      fillWithOverFlow1D(histogram, mvaOutput, evtWeight);      
     }
     else assert(0);
   }

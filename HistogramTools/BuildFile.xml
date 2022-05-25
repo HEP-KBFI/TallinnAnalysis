@@ -1,5 +1,6 @@
 <use   name="CommonTools/Utils"/>
 <use   name="FWCore/ParameterSet"/>
+<use   name="TallinnAnalysis/CommonTools"/>
 <use   name="TallinnAnalysis/Extractors"/>
 <use   name="TallinnNtupleProducer/CommonTools"/>
 <use   name="root"/>
