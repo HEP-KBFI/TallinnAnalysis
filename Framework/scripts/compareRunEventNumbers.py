@@ -2,8 +2,8 @@
 
 import re
 
-inputFile_ref = '/home/veelken/newTallinnAnalysis/CMSSW_12_3_1/src/TallinnAnalysis/Framework/test/DEBUG_newSoftware/selEvents_HH_2lss_oldSoftware.txt'
-inputFile_test = '/home/veelken/newTallinnAnalysis/CMSSW_12_3_1/src/TallinnAnalysis/Framework/test/DEBUG_newSoftware/selEvents_HH_2lss_newSoftware.txt'
+inputFile_ref = '/home/veelken/newTallinnAnalysis/CMSSW_12_3_1/src/TallinnAnalysis/Framework/test/DEBUG_newSoftware/selEvents_HH_2lss_oldSoftware_fullSample.txt'
+inputFile_test = '/home/veelken/newTallinnAnalysis/CMSSW_12_3_1/src/TallinnAnalysis/Framework/test/DEBUG_newSoftware/selEvents_HH_2lss_newSoftware_fullSample.txt'
 
 matcher_ref = re.compile('(?P<run>\d*):(?P<lumi>\d*):(?P<evt>\d*)')
 matcher_test = matcher_ref

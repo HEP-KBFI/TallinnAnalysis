@@ -43,7 +43,7 @@ datacard_HH_2lss_nonresonant = cms.PSet(
         xMin = cms.double(0.),
         xMax = cms.double(1.)
     ),
-    jsonFileName = cms.string("datacard_HH_2lss_nonresonant.json"),
+    jsonFileName = cms.string("datacard_HH_2lss_nonresonant_newSoftware.json"),
     isDEBUG = cms.bool(True)
 )
 
