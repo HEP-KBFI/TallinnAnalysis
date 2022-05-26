@@ -34,18 +34,25 @@ if len(common_events) == 0:
     raise ValueError("Found no common events --> aborting !!")
 
 # determine which variables to plot
-variables = dict1[common_events[0]].keys()
+variables = list(dict1[common_events[0]].keys())
 
 # make scatter plots of variables in file1 (x-axis) vs variables in file2 (y-axis) 
 for variable in variables:
+    if variable in [ "SM" ] or variable.find("JHEP04") != -1:
+        print("Skipping variable = %s" % variable)
+        continue
     print("Making correlation plot for variable = %s" % variable)
     x = []
     y = []
+    idxEvent = 0
     for event in common_events:
         value1 = dict1[event][variable]
         x.append(value1)
         value2 = dict2[event][variable]
         y.append(value2)
+        ##print("event #%i: x = %1.3f, y = %1.3f" % (idxEvent, value1, value2))
+        idxEvent += 1
+    plt.clf()
     plt.scatter(x, y, marker = 'o', s = 5)
     plt.xlabel("%s in %s" % (variable, label1))
     plt.ylabel("%s in %s" % (variable, label2))
