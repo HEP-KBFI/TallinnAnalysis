@@ -48,8 +48,8 @@ for variable in variables:
         y.append(value2)
     plt.scatter(x, y, marker = 'o', s = 5)
     plt.xlabel("%s in %s" % (variable, label1))
-    plt.ylabel("%s in %s" % (variable, label1))
+    plt.ylabel("%s in %s" % (variable, label2))
     outputFileName = "compareJSONs_%s.png" % variable
     plt.savefig(outputFileName)
 
-print("Done.")
+print(" Done.")
