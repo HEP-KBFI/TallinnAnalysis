@@ -19,6 +19,7 @@
 #include "TallinnAnalysis/Extractors/interface/BranchVars.h"                                    // BranchVarUInt_t, BranchVarULong64_t
 #include "TallinnAnalysis/HistogramTools/interface/HistogramFillerBase.h"                       // HistogramFillerBase, HistogramFillerPluginFactory
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"                           // cmsException
+#include "TallinnNtupleProducer/CommonTools/interface/contains.h"                               // contains()
 #include "TallinnNtupleProducer/CommonTools/interface/format_vT.h"                              // format_vdouble(), format_vstring()
 #include "TallinnNtupleProducer/Selectors/interface/RunLumiEventSelector.h"                     // RunLumiEventSelector
 
@@ -70,8 +71,8 @@ int main(int argc, char* argv[])
   std::string treeName = cfg_analyze.getParameter<std::string>("treeName");
 
   std::string process = cfg_analyze.getParameter<std::string>("process");
-  std::string central_or_shift = cfg_analyze.getParameter<std::string>("central_or_shift");
-  std::cout << "Processing process = '" << process << "', central_or_shift = '" << central_or_shift << "'" << std::endl;
+  vstring central_or_shifts = cfg_analyze.getParameter<vstring>("central_or_shifts");
+  std::cout << "Processing process = '" << process << "', central_or_shifts = '" << format_vstring(central_or_shifts) << "'" << std::endl;
 
   std::string selection = cfg_analyze.getParameter<std::string>("selection");
   std::cout << "Selection defined in config file = '" << selection << "'" << std::endl;
@@ -110,12 +111,15 @@ int main(int argc, char* argv[])
   std::vector<std::unique_ptr<HistogramFillerBase>> histograms;
   for ( auto cfg_histogram : cfg_histograms )
   {
-    std::string pluginType = cfg_histogram.getParameter<std::string>("pluginType");
-    cfg_histogram.addParameter<std::string>("process", process);
-    cfg_histogram.addParameter<std::string>("central_or_shift", central_or_shift);
-    std::unique_ptr<HistogramFillerBase> histogram = HistogramFillerPluginFactory::get()->create(pluginType, cfg_histogram);
-    histogram->bookHistograms(fs);
-    histograms.push_back(std::move(histogram));
+    for ( auto central_or_shift : central_or_shifts )
+    {
+      std::string pluginType = cfg_histogram.getParameter<std::string>("pluginType");
+      cfg_histogram.addParameter<std::string>("process", process);
+      cfg_histogram.addParameter<std::string>("central_or_shift", central_or_shift);
+      std::unique_ptr<HistogramFillerBase> histogram = HistogramFillerPluginFactory::get()->create(pluginType, cfg_histogram);
+      histogram->bookHistograms(fs);
+      histograms.push_back(std::move(histogram));
+    }
   }  
 
   std::vector<std::string> inputFileNames = inputFiles.files();
@@ -130,10 +134,10 @@ int main(int argc, char* argv[])
   std::cout << "selEventsFileName_output = " << selEventsFileName_output << std::endl;
 
   int analyzedEntries = 0;
-  int processedEntries_allInputFiles = 0;
+  std::map<std::string, int>    processedEntriesMap_allInputFiles; // key = central_or_shift
   int processedInputFiles = 0;
-  int selectedEntries = 0;
-  double selectedEntries_weighted = 0.;  
+  std::map<std::string, int>    selectedEntriesMap;                // key = central_or_shift
+  std::map<std::string, double> selectedEntriesMap_weighted;       // key = central_or_shift
   for ( size_t idxInputFile = 0; idxInputFile < numInputFiles; ++idxInputFile )
   {
     const std::string & inputFileName = inputFileNames.at(idxInputFile);
@@ -158,121 +162,136 @@ int main(int argc, char* argv[])
         << histogramName_analyzedEntries;
     analyzedEntries += histogram_analyzedEntries->GetEntries();
     
-    BranchVarFactory::initialize(inputTree);
-    BranchVarFactory::set_central_or_shift(central_or_shift);
-
-    std::string selection_modified = BranchVarFactory::get_selection(selection);
-    std::cout << "Applying selection = '" << selection_modified << "'" << std::endl;
-
-    TTree* inputTree_selected = nullptr;
-    if ( selection != "" )
+    for ( auto central_or_shift : central_or_shifts )
     {
-      inputTree_selected = inputTree->CopyTree(selection_modified.data());
-    }
-    else
-    {
-      inputTree_selected = inputTree;
-    }
+      std::cout << "Processing central_or_shift = '" << central_or_shift << "'" << std::endl;
+      bool is_first_central_or_shift = (central_or_shift == central_or_shifts.front());
+      bool is_central = (central_or_shift == "central");
 
-    BranchVarUInt_t* branchVar_run = new BranchVarUInt_t("run");
-    branchVar_run->setBranchAddress(inputTree_selected);
-    BranchVarUInt_t* branchVar_lumi = new BranchVarUInt_t("lumi");
-    branchVar_lumi->setBranchAddress(inputTree_selected);
-    BranchVarULong64_t* branchVar_event = new BranchVarULong64_t("event");
-    branchVar_event->setBranchAddress(inputTree_selected);
+      int& processedEntries_allInputFiles = processedEntriesMap_allInputFiles[central_or_shift];
+      int& selectedEntries = selectedEntriesMap[central_or_shift];
+      double& selectedEntries_weighted = selectedEntriesMap_weighted[central_or_shift];
 
-    for ( auto & histogram : histograms )
-    {
-      histogram->setBranchAddresses(inputTree_selected);
-    }
+      BranchVarFactory::initialize(inputTree);
+      BranchVarFactory::set_central_or_shift(central_or_shift);
 
-    std::vector<std::shared_ptr<BranchVarBase>> branchVars_evtWeight;
-    for ( const std::string& branchName_evtWeight : branchNames_evtWeights )
-    {
-      std::shared_ptr<BranchVarBase> branchVar = BranchVarFactory::create(branchName_evtWeight);
-      branchVar->setBranchAddress(inputTree_selected);
-      branchVars_evtWeight.push_back(branchVar);
-    }
-    std::vector<std::string> branchNames_evtWeights_modified;
-    for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
-    {
-      branchNames_evtWeights_modified.push_back(branchVar->getBranchName());
-    }
-    std::cout << "Applying event weights = '" << format_vstring(branchNames_evtWeights_modified) << "'" << std::endl;
+      std::string selection_modified = BranchVarFactory::get_selection(selection);
+      std::cout << "Applying selection = '" << selection_modified << "'" << std::endl;
 
-    int numEntries = inputTree_selected->GetEntries();
-    for ( int idxEntry = 0; idxEntry < numEntries && (maxEvents == -1 || processedEntries_allInputFiles < maxEvents); ++idxEntry )
-    {
-      inputTree_selected->GetEntry(idxEntry);
-
-      UInt_t run = branchVar_run->getValue();
-      UInt_t lumi = branchVar_lumi->getValue();
-      ULong64_t event = branchVar_event->getValue();
-
-      ++processedEntries_allInputFiles;
-      if ( idxEntry == 0 ) ++processedInputFiles;
-      if ( processedEntries_allInputFiles > 0 && (processedEntries_allInputFiles % reportEvery) == 0 )
+      TTree* inputTree_selected = nullptr;
+      if ( selection != "" )
       {
-        std::cout << "processing Entry " << processedEntries_allInputFiles
-                  << " or " << idxEntry << " entry in #"
-                  << idxInputFile
-                  << " (run = " << run << ", ls = " << lumi << ", event = " << event
-                  << ") file\n";
+        inputTree_selected = inputTree->CopyTree(selection_modified.data());
       }
-
-      if ( run_lumi_eventSelector )
-      { 
-        if ( !(*run_lumi_eventSelector)(run, lumi, event) )
-        {
-          continue;
-        }
-        std::cout << "processing Entry " << processedEntries_allInputFiles << ": run = " << run << ", ls = " << lumi << ", event = " << event << '\n';
-        std::cout << "input File = " << inputFileName << '\n';
-      }
-
-      if ( isDEBUG )
+      else
       {
-        std::cout << "event #" << processedEntries_allInputFiles << " run = " << run << ", ls = " << lumi << ", event = " << event << '\n';
+        inputTree_selected = inputTree;
       }
 
-      double evtWeight = 1.;
-      for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
-      {
-        evtWeight *= (*branchVar)();
-      }
+      BranchVarUInt_t* branchVar_run = new BranchVarUInt_t("run");
+      branchVar_run->setBranchAddress(inputTree_selected);
+      BranchVarUInt_t* branchVar_lumi = new BranchVarUInt_t("lumi");
+      branchVar_lumi->setBranchAddress(inputTree_selected);
+      BranchVarULong64_t* branchVar_event = new BranchVarULong64_t("event");
+      branchVar_event->setBranchAddress(inputTree_selected);
 
       for ( auto & histogram : histograms )
       {
-        histogram->fillHistograms(evtWeight);
+        histogram->setBranchAddresses(inputTree_selected);
       }
 
-      if ( selEventsFile )
+      std::vector<std::shared_ptr<BranchVarBase>> branchVars_evtWeight;
+      for ( const std::string& branchName_evtWeight : branchNames_evtWeights )
       {
-        (*selEventsFile) << run << ":" << lumi << ":" << event << '\n';
+        std::shared_ptr<BranchVarBase> branchVar = BranchVarFactory::create(branchName_evtWeight);
+        branchVar->setBranchAddress(inputTree_selected);
+        branchVars_evtWeight.push_back(branchVar);
+      }
+      std::vector<std::string> branchNames_evtWeights_modified;
+      for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
+      {
+        branchNames_evtWeights_modified.push_back(branchVar->getBranchName());
+      }
+      std::cout << "Applying event weights = '" << format_vstring(branchNames_evtWeights_modified) << "'" << std::endl;
+
+      int numEntries = inputTree_selected->GetEntries();
+      for ( int idxEntry = 0; idxEntry < numEntries && (maxEvents == -1 || processedEntries_allInputFiles < maxEvents); ++idxEntry )
+      {
+        inputTree_selected->GetEntry(idxEntry);
+
+        UInt_t run = branchVar_run->getValue();
+        UInt_t lumi = branchVar_lumi->getValue();
+        ULong64_t event = branchVar_event->getValue();
+  
+        ++processedEntries_allInputFiles;
+        if ( is_first_central_or_shift && idxEntry == 0 ) ++processedInputFiles;
+        if ( processedEntries_allInputFiles > 0 && (processedEntries_allInputFiles % reportEvery) == 0 )
+        {
+          std::cout << "processing Entry " << processedEntries_allInputFiles
+                    << " or " << idxEntry << " entry in #"
+                    << idxInputFile
+                    << " (run = " << run << ", ls = " << lumi << ", event = " << event
+                    << ") file\n";
+        }
+
+        if ( run_lumi_eventSelector )
+        { 
+          if ( !(*run_lumi_eventSelector)(run, lumi, event) )
+          {
+            continue;
+          }
+          std::cout << "processing Entry " << processedEntries_allInputFiles << ":" 
+                    << " run = " << run << ", ls = " << lumi << ", event = " << event << '\n';
+          std::cout << "input File = " << inputFileName << '\n';
+        }
+
+        if ( isDEBUG )
+        {
+          std::cout << "event #" << processedEntries_allInputFiles
+                    << " run = " << run << ", ls = " << lumi << ", event = " << event << '\n';
+        }
+
+        double evtWeight = 1.;
+        for ( const std::shared_ptr<BranchVarBase>& branchVar : branchVars_evtWeight )
+        {
+          evtWeight *= (*branchVar)();
+        }
+
+        for ( auto & histogram : histograms )
+        {
+          histogram->fillHistograms(evtWeight);
+        }
+
+        if ( selEventsFile && is_central )
+        {
+          (*selEventsFile) << run << ":" << lumi << ":" << event << '\n';
+        }
+
+        ++selectedEntries;
+        selectedEntries_weighted += evtWeight;
       }
 
-      ++selectedEntries;
-      selectedEntries_weighted += evtWeight;
+      delete branchVar_run;
+      delete branchVar_lumi;
+      delete branchVar_event;
+      if ( inputTree_selected != inputTree )
+      {
+        delete inputTree_selected;
+      }
     }
 
-    delete branchVar_run;
-    delete branchVar_lumi;
-    delete branchVar_event;
-    if ( inputTree_selected != inputTree )
-    {
-      delete inputTree_selected;
-    }
     delete inputTree;
     delete histogram_analyzedEntries;
     delete inputFile;
   }
 
-  std::cout << "max num. Entries = " << processedEntries_allInputFiles
+  std::string ref_key = ( contains(central_or_shifts, "central") ) ? "central" : central_or_shifts.front();
+  std::cout << "max num. Entries = " << processedEntriesMap_allInputFiles[ref_key]
             << " (limited by " << maxEvents << ") processed in "
             << processedInputFiles << " file(s) (out of "
             << numInputFiles << ")\n"
             << " analyzed = " << analyzedEntries << '\n'
-            << " selected = " << selectedEntries << " (weighted = " << selectedEntries_weighted << ")" << std::endl;
+            << " selected = " << selectedEntriesMap[ref_key] << " (weighted = " << selectedEntriesMap_weighted[ref_key] << ")" << std::endl;
 
 //--- memory clean-up
   delete run_lumi_eventSelector;
