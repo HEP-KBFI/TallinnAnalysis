@@ -19,3 +19,8 @@ git remote set-url origin git+ssh://git@github.com/HEP-KBFI/TallinnAnalysis.git
 cd $CMSSW_BASE/src/
 
 scram b -j 8
+
+The package TallinnAnalysis depends on the package TallinnNtupleProducer
+(the code will not compile unless the package TallinnNtupleProducer is checked-out too).
+Please follow the installation instructions given in https://github.com/HEP-KBFI/TallinnNtupleProducer/blob/main/README.md 
+to install the TallinnNtupleProducer package.

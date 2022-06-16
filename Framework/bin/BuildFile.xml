@@ -1,4 +1,5 @@
 <bin file="analyze.cc" name="analyze">
+  <use   name="DataFormats/FWLite"/>
   <use   name="FWCore/FWLite"/>
   <use   name="FWCore/ParameterSet"/>
   <use   name="FWCore/ParameterSetReader"/>
@@ -8,6 +9,17 @@
   <use   name="TallinnAnalysis/HistogramTools"/>
   <use   name="TallinnNtupleProducer/CommonTools"/>
   <use   name="TallinnNtupleProducer/Selectors"/>
+  <use   name="root"/>
+</bin>
+<bin file="addBackgroundFromData.cc" name="addBackgroundFromData">
+  <use   name="DataFormats/FWLite"/>
+  <use   name="FWCore/FWLite"/>
+  <use   name="FWCore/ParameterSet"/>
+  <use   name="FWCore/ParameterSetReader"/>
+  <use   name="PhysicsTools/FWLite"/>
+  <use   name="TallinnAnalysis/Framework"/>
+  <use   name="TallinnAnalysis/HistogramTools"/>
+  <use   name="TallinnNtupleProducer/CommonTools"/>
   <use   name="root"/>
 </bin>
 <bin file="testParser.cc" name="testParser">
