@@ -2,7 +2,6 @@
 
 #include "TallinnAnalysis/Extractors/interface/BranchVarFactory.h"                     // BranchVarFactory
 #include "TallinnAnalysis/Extractors/interface/BranchVars.h"                           // BranchVarUInt_t, BranchVarULong64_t
-#include "TallinnAnalysis/HistogramTools/interface/createHistogram.h"                  // createHistogram1D()
 #include "TallinnAnalysis/HistogramTools/interface/fillWithOverFlow.h"                 // fillWithOverFlow1D()
 #include "TallinnAnalysis/MLTools/interface/TMVAInterface.h"
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"                  // cmsException()
@@ -14,6 +13,8 @@
 #include "TTree.h"                                                                     // TTree
 #include "TTreeFormula.h"                                                              // TTreeFormula
 #include "TH1.h"                                                                       // TH1
+
+#include <iostream>                                                                    // std::cout
 
 typedef std::vector<double> vdouble;
 typedef std::vector<std::string> vstring;
@@ -97,11 +98,12 @@ void
 BDTHistogramFiller_HH_multilepton::bookHistograms(TFileDirectory & dir)
 {
   std::string histogramDir = cfg_.getParameter<std::string>("histogramDir");
+  
   for ( const std::string & parameter : parameters_ )
   {
     edm::ParameterSet cfg_histogram = cfg_;
     cfg_histogram.addParameter<std::string>("histogramDir", Form("%s/%s", histogramDir.data(), parameter.data()));
-    histograms_[parameter] = createHistogram1D(dir, cfg_histogram);
+    histograms_[parameter] = bookHistogram1D(dir, cfg_histogram);
   }
 }
 
@@ -159,6 +161,7 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       std::map<std::string, std::shared_ptr<BranchVarBase>>::const_iterator branchVar_hhReweight = hhReweightMap_.find(parameter);
       assert(branchVar_hhReweight != hhReweightMap_.end());
       double hhReweight = branchVar_hhReweight->second->operator()();
+      std::cout << "bmName = " << parameter << ": mvaOutput = " << mvaOutput << " (evtWeight = " << evtWeight << ", hhReweight = " << hhReweight << ")" << std::endl;
       fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);      
     }
     else if ( mode_ == Mode::kResonant )

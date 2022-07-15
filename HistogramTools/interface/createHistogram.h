@@ -5,14 +5,17 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h" // edm::ParameterSet
 
+#include <utility>                                      // std::pair	
+
 // forward declarations
+class TDirectory;
 class TH1;
 class TH2;
 
-TH1 *
+std::pair<TDirectory*, TH1 *>
 createHistogram1D(TFileDirectory & dir, const edm::ParameterSet & cfg);
 
-TH2 *
+std::pair<TDirectory*, TH2 *>
 createHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg);
 
 #endif // TallinnAnalysis_HistogramTools_createHistogram_h

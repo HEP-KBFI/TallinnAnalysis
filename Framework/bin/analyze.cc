@@ -296,10 +296,8 @@ int main(int argc, char* argv[])
 //--- memory clean-up
   delete run_lumi_eventSelector;
 
-  for ( auto & histogram : histograms )
-  {
-    histogram.reset(nullptr);
-  }
+//--- write histograms to output file
+  HistogramFillerBase::writeHistograms();
 
   delete selEventsFile;
 

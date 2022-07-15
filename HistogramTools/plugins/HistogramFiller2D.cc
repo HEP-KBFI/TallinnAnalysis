@@ -1,7 +1,6 @@
 #include "TallinnAnalysis/HistogramTools/plugins/HistogramFiller2D.h"
 
-#include "TallinnAnalysis/HistogramTools/interface/createHistogram.h"   // createHistogram1D()
-#include "TallinnAnalysis/HistogramTools/interface/fillWithOverFlow.h"  // fillWithOverFlow1D()
+#include "TallinnAnalysis/HistogramTools/interface/fillWithOverFlow.h"  // fillWithOverFlow2D()
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h"   // cmsException()
 
 #include "TString.h"                                                    // Form()
@@ -47,7 +46,7 @@ HistogramFiller2D::bookHistograms(TFileDirectory & dir)
       category->treeFormula_ = nullptr;
       edm::ParameterSet cfg_histogram = cfg_;
       cfg_histogram.addParameter<std::string>("histogramDir", category->histogramDir_);
-      category->histogram_ = createHistogram2D(dir, cfg_histogram);
+      category->histogram_ = bookHistogram2D(dir, cfg_histogram);
       categories_.push_back(category);
     }
   }
@@ -57,7 +56,7 @@ HistogramFiller2D::bookHistograms(TFileDirectory & dir)
     category->histogramDir_ = cfg_.getParameter<std::string>("histogramDir");
     category->selection_ = "";
     category->treeFormula_ = nullptr;
-    category->histogram_ = createHistogram2D(dir, cfg_);
+    category->histogram_ = bookHistogram2D(dir, cfg_);
     categories_.push_back(category);
   }
 }

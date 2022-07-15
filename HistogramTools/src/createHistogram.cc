@@ -3,11 +3,16 @@
 #include "TallinnNtupleProducer/CommonTools/interface/cmsException.h" // cmsException()
 #include "TallinnNtupleProducer/CommonTools/interface/format_vT.h"    // format_vdouble()
 
+#include <TArrayD.h>                                                  // TArrayD
+#include <TDirectory.h>                                               // TDirectory
 #include <TH1.h>                                                      // TH1, TH1D
 #include <TH2.h>                                                      // TH2, TH2D
+#include <TObjArray.h>                                                // TObjArray
+#include <TObjString.h>                                               // TObjString
+#include <TString.h>                                                  // Form(), TString
 
+#include <assert.h>                                                   // assert()
 #include <iostream>                                                   // std::cout
-#include <utility>                                                    // std::pair
 #include <vector>                                                     // std::vector
 
 typedef std::vector<double> vdouble;
@@ -17,15 +22,12 @@ namespace
   std::pair<std::string, std::string>
   getHistogramName_and_Title(const edm::ParameterSet & cfg)
   {
-    std::string histogramDir = cfg.getParameter<std::string>("histogramDir");
     std::string process = cfg.getParameter<std::string>("process");
     std::string central_or_shift = cfg.getParameter<std::string>("central_or_shift");
     std::string histogramTitle;
     if ( central_or_shift != "" && central_or_shift != "central" ) histogramTitle = Form("%s_%s", process.data(), central_or_shift.data());
     else                                                           histogramTitle = process;
-    std::string histogramName;
-    if ( histogramDir != "" ) histogramName = Form("%s/%s", histogramDir.data(), histogramTitle.data());
-    else                      histogramName = histogramTitle;
+    std::string histogramName = histogramTitle;
     return std::pair<std::string, std::string>(histogramName, histogramTitle);
   }
 
@@ -73,9 +75,71 @@ namespace
     }
     return retVal;
   }
+
+  TDirectory *
+  createSubdirectory(TDirectory * dir,
+                     const std::string & subdirName,
+                     bool verbose = false)
+  {
+    if(verbose)
+    {
+      std::cout << "<createSubdirectory>:\n"
+                   " dir = " << dir << ": name = '" << dir->GetName() << "'\n"
+                   " subdirName = '" << subdirName << "'\n";
+    }
+
+    dir->cd();
+    if(! dir->Get(subdirName.data()))
+    {
+      if(verbose)
+      {
+        std::cout << "--> creating subdir = '" << subdirName << "'\n";
+      }
+      dir->mkdir(subdirName.data());
+    }
+    else
+    {
+      if(verbose)
+      {
+        std::cout << "--> subdir = '" << subdirName << "' already exists --> skipping\n";
+      }
+    }
+    TDirectory * subdir = dynamic_cast<TDirectory *>(dir->Get(subdirName.data()));
+    assert(subdir);
+    return subdir;
+  }
+
+  TDirectory *
+  createSubdirectory_recursively(TFileDirectory & dir,
+                               const std::string & fullSubdirName,
+                               bool verbose = false)
+  {
+    if(verbose)
+    {
+      std::cout << "<createSubdirectory_recursively>:\n"
+                   " dir = " << &dir << ": name = '" << dir.getBareDirectory()->GetName() << "'\n"
+                   " fullSubdirName = '" << fullSubdirName << "'\n";
+    }
+
+    TString fullSubdirName_tstring = fullSubdirName.data();
+    TObjArray * subdirNames = fullSubdirName_tstring.Tokenize("/");
+    int numSubdirectories = subdirNames->GetEntries();
+
+    TDirectory * parent = dir.getBareDirectory();
+    for ( int idxSubdir = 0; idxSubdir < numSubdirectories; ++idxSubdir )
+    {
+      const TObjString * subdirName = dynamic_cast<TObjString *>(subdirNames->At(idxSubdir));
+      assert(subdirName);
+
+      TDirectory * subdir = createSubdirectory(parent, subdirName->GetString().Data(), verbose);
+      parent = subdir;
+    }
+    delete subdirNames;
+    return parent;
+  }
 }
 
-TH1 *
+std::pair<TDirectory*, TH1 *>
 createHistogram1D(TFileDirectory & dir, const edm::ParameterSet & cfg)
 {
   std::pair<std::string, std::string> histogramName_and_Title = getHistogramName_and_Title(cfg);
@@ -86,12 +150,14 @@ createHistogram1D(TFileDirectory & dir, const edm::ParameterSet & cfg)
   std::vector<double> binning = getBinning(cfg.getParameterSet("xAxis"), "xMin", "xMax");
   TArrayD binning_TArrayD = convert_to_TArrayD(binning);
   int numBins = binning_TArrayD.GetSize() - 1;
-  TH1* histogram = dir.make<TH1D>(histogramName.data(), histogramTitle.data(), numBins, binning_TArrayD.GetArray());
+  TDirectory* const subdir = createSubdirectory_recursively(dir, histogramDir);
+  subdir->cd();
+  TH1* histogram = new TH1D(histogramName.data(), histogramTitle.data(), numBins, binning_TArrayD.GetArray());
   //std::cout << " binning = " << format_vdouble(binning) << std::endl;
-  return histogram;
+  return std::pair<TDirectory*, TH1 *>(subdir, histogram);
 }
 
-TH2 *
+std::pair<TDirectory*, TH2 *>
 createHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg)
 {
   std::pair<std::string, std::string> histogramName_and_Title = getHistogramName_and_Title(cfg);
@@ -105,7 +171,9 @@ createHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg)
   std::vector<double> binningY = getBinning(cfg.getParameterSet("yAxis"), "yMin", "yMax");
   TArrayD binningY_TArrayD = convert_to_TArrayD(binningY);
   int numBinsY = binningY_TArrayD.GetSize() - 1;
-  TH2* histogram = dir.make<TH2D>(histogramName.data(), histogramTitle.data(), numBinsX, binningX_TArrayD.GetArray(), numBinsY, binningY_TArrayD.GetArray());
+  TDirectory* const subdir = createSubdirectory_recursively(dir, histogramDir);
+  subdir->cd();
+  TH2* histogram = new TH2D(histogramName.data(), histogramTitle.data(), numBinsX, binningX_TArrayD.GetArray(), numBinsY, binningY_TArrayD.GetArray());
   //std::cout << " binning: x-axis = " << format_vdouble(binningX) << ", y-axis = " << format_vdouble(binningY) << std::endl;
-  return histogram;
+  return std::pair<TDirectory*, TH2 *>(subdir, histogram);
 }

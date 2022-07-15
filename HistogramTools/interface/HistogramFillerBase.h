@@ -12,6 +12,8 @@
 #include <vector>                                                  // std::vector
 
 // forward declarations
+class TH1;
+class TH2;
 class TTree;
 
 class HistogramFillerBase
@@ -41,7 +43,19 @@ class HistogramFillerBase
   void
   fillHistograms(double evtWeight) = 0;
 
+  /**
+   * @brief Write all histograms to output file
+   */
+  static void
+  writeHistograms();
+
  protected:
+  TH1 *
+  bookHistogram1D(TFileDirectory & dir, const edm::ParameterSet & cfg);
+
+  TH2 *
+  bookHistogram2D(TFileDirectory & dir, const edm::ParameterSet & cfg);
+
   edm::ParameterSet cfg_;
 
   TTree * tree_;
@@ -49,6 +63,11 @@ class HistogramFillerBase
   std::vector<std::shared_ptr<VarExtractorBase>> extractors_;
   std::vector<std::shared_ptr<BranchVarBase>> branchVars_;
 
+  // global "registry" of all histograms (1D and 2D) booked by analysis job 
+  static std::map<TDirectory *, std::vector<TH1 *>> gHistograms_;
+
+  // counter of TTreeFormula instantiated by all classes derived from HistogramFillerBase class,
+  // used to assign each TTreeFormula a different name
   static int gNumTreeFormulas;
 };
 
