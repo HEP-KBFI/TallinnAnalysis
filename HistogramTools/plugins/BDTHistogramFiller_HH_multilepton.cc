@@ -14,8 +14,6 @@
 #include "TTreeFormula.h"                                                              // TTreeFormula
 #include "TH1.h"                                                                       // TH1
 
-#include <iostream>                                                                    // std::cout
-
 typedef std::vector<double> vdouble;
 typedef std::vector<std::string> vstring;
 
@@ -125,6 +123,10 @@ BDTHistogramFiller_HH_multilepton::setBranchAddresses(TTree * tree)
     branchVars_.push_back(branchVar_lumi_);
   }
   branchVars_.push_back(branchVar_event_);
+  for(auto & kv: hhReweightMap_)
+  {
+    kv.second->setBranchAddress(tree);
+  }
   HistogramFillerBase::setBranchAddresses(tree);
 }
 
@@ -161,7 +163,6 @@ BDTHistogramFiller_HH_multilepton::fillHistograms(double evtWeight)
       std::map<std::string, std::shared_ptr<BranchVarBase>>::const_iterator branchVar_hhReweight = hhReweightMap_.find(parameter);
       assert(branchVar_hhReweight != hhReweightMap_.end());
       double hhReweight = branchVar_hhReweight->second->operator()();
-      std::cout << "bmName = " << parameter << ": mvaOutput = " << mvaOutput << " (evtWeight = " << evtWeight << ", hhReweight = " << hhReweight << ")" << std::endl;
       fillWithOverFlow1D(histogram, mvaOutput, evtWeight*hhReweight);      
     }
     else if ( mode_ == Mode::kResonant )
